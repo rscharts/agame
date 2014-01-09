@@ -17,7 +17,7 @@
         <div id="updatebar" class="hidden">
             <p>An update is available! Refresh the page to load the new content, or <a href="changelog.txt" target="_blank">see what's new</a>.</p>
         </div>
-        
+
         <div id="container">
             <div id="save">
                 <img src="game/img/icons/save.png" width="32" height="32"> Saved: <span name="time">never</span>
@@ -84,13 +84,13 @@
                             <td id="zombie_icon"><img src="game/img/npc/zombie.png" width="32" height="32"></td><td id="zombie_display" class="displaytext"></td>
                             <td id="chikolio_icon" class="hidden"><img src="game/img/npc/chicken.png" width="32" height="32"></td><td id="chikolio_display" class="hidden displaytext"></td>
                             <td id="underlord_icon" class="hidden"><img src="game/img/icons/zombiepigman.png" width="32" height="32"></td><td id="underlord_display" class="hidden displaytext"></td>
-                            
+
                             <td id="enderboss_icon" class="hidden">
                                 <img src="game/img/npc/enderman_face.png" width="32" height="32">
                             </td>
                             <td id="enderboss_display" class="hidden displaytext"></td>
                             <td id="enderboss_health" class="hidden"></td>
-                            
+
                             <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
                             <td><img src="game/img/icons/portalparts_lit.png" width="32" height="32"></td><td id="portalparts_display" class="displaytext"></td><td></td>
                         </tr>
@@ -131,7 +131,7 @@
                                 Sharpness: <span id="pickaxe_var_sharpness"></span><br/>
                                 Speed: <span id="pickaxe_var_speed"></span><br/>
                                 Drop Chance: <span id="pickaxe_var_dropchance"></span><br/>
-                                <span id="autopilot_option" class="hidden">Autopilot: <input type="checkbox" name="autopilot_enabled" checked="checked"></span> 
+                                <span id="autopilot_option" class="hidden">Autopilot: <input type="checkbox" name="autopilot_enabled" checked="checked"></span>
                             </p>
                         </div>
 
@@ -145,7 +145,7 @@
                 <div id="shrine" class="hidden">
                     <h2>Shrine health: <span name="health">0</span>/500000</h2>
                 </div>
-                
+
                 <div id="orbs" class="hidden">
                     <div style="float:left;margin-right:30px;">
                         <img src="game/img/icons/orb.png" name="orb-1"><br/>
@@ -169,7 +169,7 @@
                         <button name="attackorb-3">Attack</button>
                     </div>
                 </div>
-                
+
                 <div id="enderbossFight" class="hidden">
                     <div style="float:left;">
                         <img src="game/img/npc/enderman_face.png" width="275" height="130"><br/>
@@ -189,13 +189,13 @@
                     </div>
                 </div>
                 <div class="clear"></div>
-                
+
                 <div id="employment">
                     <hr>
                     <p name="tabs" class="title"><a href="#" name="tab-workers/table" class="selected">Workers</a> &nbsp;&nbsp; <a href="#" name="tab-research/div">Research</a> &nbsp;&nbsp;
                         <a href="#" name="tab-friends/div" class="hidden">FRIENDS</a><a href="#" name="tab-soldiers/table">ARMY</a> &nbsp;&nbsp; <a href="#" name="tab-attack/div">Attack</a>
                         &nbsp;&nbsp; <a href="#" name="tab-portal/div">Portal</a> &nbsp;&nbsp; <a href="#" name="tab-stats/table">Stats</a></p>
-                   
+
                     <div name="research" type="tab" style="margin-top:20px;" class="hidden">
                         <div name="1">
                             <button name="construct_lab" style="padding:30px;">Construct a research lab for $100,000,000</button>
@@ -218,7 +218,7 @@
                                 </tr>
                             </table>
                             <div class="left textleft" style="margin-left:40px;">
-                                <a href="#" name="start_research" style="color:green;">Start Research Project</a><br/>
+                                <button name="start_research" style="color:green;">Start Research Project</button><br/>
                                 <span name="no_projects">You currently have no projects.</span>
                                 <div style="width:100%;" name="projects_holder"></div>
                             </div>
@@ -271,12 +271,12 @@
                 </div>
             </div>
         </div>
-        
+
         <div id="popup" class="popup hidden">
             <div name="store_content">
                 <p name="title" class="title"></p>
                 <div name="content">
-                    
+
                 </div>
                 <span name="buttons">
                     <button name="continue">CONTINUE</button>
@@ -284,13 +284,13 @@
                 <div class="clear"></div>
             </div>
         </div>
-        
+
         <div id="loading_screen">
             <h2>A G A M E . . .</h2>
             <br/>
             <img src="game/img/icons/loading.gif" width="50" height="50" />
             <br/>
-            <font size="1">Please wait while the game resources are loaded.</font> 
+            <font size="1">Please wait while the game resources are loaded.</font>
         </div>
     </body>
     <script>
