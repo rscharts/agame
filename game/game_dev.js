@@ -1131,6 +1131,7 @@ $(document).ready(function() {
 
     function workerHappinessFunc(){
         setTimeout(function(){
+            if(workerToggle){
                 var d = new Date().getTime();
 
                 //determine happiness
@@ -1159,10 +1160,11 @@ $(document).ready(function() {
                     }
                     
                     employed[quitter][0]--;
-                    popup('I QUIT!', 'A '+ workers[quitter].name +' just quit due to the low worker happiness levels. More will quit if you don\'t increase your happiness levels!', '', 0);
+                    popup('I QUIT!', '<img src="'+ workers[quitter].img +'" style="margin-right:6px;" width="40" height="40" class="left">A '+ workers[quitter].name +' just quit due to the low worker happiness levels. More will quit if you don\'t increase your happiness levels!', '', 0);
                 }
                 
                 workerHappinessFunc();
+            }
         },30000);
     }
 
@@ -1195,7 +1197,7 @@ $(document).ready(function() {
 
     function payWages(){
         var d = new Date().getTime();
-        if((d-workerLastPaid) > workersLastPaid){
+        if((d-workersLastPaid) > workerPayCycle){
             if(money >= workerTotalWages){
                 money -= workerTotalWages;
                 workersLastPaid = new Date().getTime();
@@ -1732,8 +1734,6 @@ $(document).ready(function() {
         if ( typeof cookie != 'undefined' && cookie.length > 0) {
             cookie = decodeURIComponent(escape(Base64.decode(cookie)));
             cookie = JSON.parse(cookie);
-
-            console.log(cookie);
 
             //loop through object and load each element into session
             for (var key in cookie) {
