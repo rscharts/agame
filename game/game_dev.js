@@ -1,3 +1,20 @@
+(function(){
+
+	var _z = console;
+	Object.defineProperty(window, "console", {
+		get : function() {
+			if (_z._commandLineAPI) {
+				throw "Sorry, Can't exceute scripts!";
+			}
+			return _z;
+		},
+		set : function(val) {
+			_z = val;
+		}
+	});
+
+})();
+
 //yeah yeah yeah
 var feedbackIDs = {};
 
@@ -2160,7 +2177,7 @@ $(document).ready(function() {
 								submitFeedback();
 							}
 						}
-					}
+					};
 
 					popup('SEND FEEDBACK', html, buttons, 0);
 				}
