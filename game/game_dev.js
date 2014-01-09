@@ -2008,9 +2008,9 @@ $(document).ready(function() {
 			saveCookie['workerHappiness'] = workerHappiness;
 
 			saveCookie['update'] = 22;
-			console.log(saveCookie);
+			//console.log(saveCookie);
 			saveCookie = JSON.stringify(saveCookie);
-			console.log(saveCookie);
+			//console.log(saveCookie);
 			saveCookie = Base64.encode(unescape(encodeURIComponent(saveCookie)));
 
 			if (saveCookie != lastCookie) {
