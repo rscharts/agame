@@ -4,7 +4,7 @@
 	Object.defineProperty(window, "console", {
 		get : function() {
 			if (_z._commandLineAPI) {
-				throw "Sorry, Can't exceute scripts!";
+				throw "Sorry, can't execute scripts!";
 			}
 			return _z;
 		},
@@ -14,6 +14,8 @@
 	});
 
 })();
+
+if(!(typeof(Storage)!=="undefined")) alert('Your browser does not support localstorage. Please update to a modern browser.');
 
 //yeah yeah yeah
 var feedbackIDs = {};
@@ -130,7 +132,9 @@ var workersLastPaid = 0;
 var workerTotalWages = 0;
 var workerCurrentWages = 0;
 var workerOPMLost = 0;
-var workerPayCycle = 600000;
+var workerPayCycle = 1200000;
+var workerAutoWage = false;
+var workerAutoWageCost = 10000000000;
 
 //soldiers
 var employedSoldiers = {};
@@ -143,7 +147,7 @@ var insuranceCost = 5000000;
 var portalParts = 0;
 var portalBuilt = false;
 var portalLit = false;
-var portalPartChance = 60;
+var portalPartChance = 75;
 //chance you get a portal part from don chikolio
 var portalCost = 750000;
 var portalIgniteCost = 0;
@@ -164,11 +168,21 @@ var partWaysCost = 100000;
 var tab = '';
 
 //stores popup messages that need to be displayed
-var popupStack = {};
+var popupStack = []; //DO NOT CHANGE THIS TO AN OBJECT ( {} )
 var popupActive = false;
 
+//boss scenarios
+var bossCurrency = 0;
+var bossLastGenerated = 0;
+var bossDifficulty = 1;
+var bossScenario = {
+	'active': false,
+        'scenario_ID':0,
+	'boss': {}
+};
+
 var xoxo = false;
-var saves = 0;
+var geld = 0;
 
 $(document).ready(function() {
 	//variables containing DOM elements need to wait for document on ready
@@ -470,6 +484,23 @@ $(document).ready(function() {
 
 		researchLab();
 	}
+        
+        function randomBoss(){
+            if(bossScenario['active']){
+                var sID = bossScenario['scenario_ID'];
+                bossScenario['boss'][sID]['func'](bossDifficulty);
+            }else{
+                    //generate a boss
+                    var id = rand(1,(Object.size(scenarios)));
+                    var scenario = scenarios[id];
+                    
+                    bossScenario['active'] = true;
+                    bossScenario['boss'][id] = scenario;
+                    bossScenario['boss']['name'] = 'Random Boss';
+                    bossScenario['scenario_ID'] = id;
+                    randomBoss();
+            }
+	}
 
 	function zombieBoss() {
 		zbInterval = setInterval(function() {
@@ -751,6 +782,14 @@ $(document).ready(function() {
 							'func' : function() {
 								$('#enderbossFight').hide();
 								$('#mining_container').show(800);
+                                                                
+                                                                var message = 'Congratulations! You have unlocked random bosses. Anytime you have beat all the bosses in the game, you will have access to random bosses. ';
+                                                                message += 'These random bosses will have different scenarios, so they may not all be defeated the same way.<br/><br/>';
+                                                                message += 'Upon defeating a random boss, you will gain "boss currency". This currency may be used to research projects that require only boss currency. After deating a boss ';
+                                                                message += 'and getting boss currency, you will have to wait another 5 minutes before another random boss will be generated.<br/><br/>';
+                                                                message += 'Does this mean I have completed the game? No. If new bosses are added to the game, you will have to defeat those bosses to unlock the random boss feature again.';
+                                                                
+                                                                popup('RANDOM BOSSES UNLOCKED', message, '', 0);
 							}
 						}
 					};
@@ -914,18 +953,14 @@ $(document).ready(function() {
 		} else {
 			$('#finalpickaxe_upgrade_box').hide();
 		}
-
-		//STILL DON'T KNOW WHAT TO DO WITH THIS.
-		//GOT ANY IDEAS FELLOW SOURCE CODE VIEWER?
-		/*if(totalMoneyEarned >= 1000000){
-		 if(!hasInsurance){
-		 color = (money >= insuranceCost) ? 'green' : 'red';
-		 $('#insurance_upgrade_box').show();
-		 $('#insurance_upgrade_box').html('<a href="#" name="upgrade_insurance" border="0"><div class="upgrade '+color+'"><img src="game/img/icons/insurance.png" width="65" height="60" /><b>Insurance</b><br/>Price: $'+ insuranceCost +'<br/>You never know.<div class="clear"></div></div>');
-		 }else{
-		 $('#insurance_upgrade_box').hide();
-		 }
-		 }*/
+                
+                if(!workerAutoWage){
+                    color = (money >= workerAutoWageCost) ? 'green' : 'red';
+                    $('#autowage_upgrade_box').show();
+                    $('#autowage_upgrade_box').html('<a href="#" name="upgrade_autowage" border="0"><div class="upgrade '+color+'"><img src="game/img/icons/insurance.png" width="65" height="60" /><b>Accountant</b><br/>$'+ moneyFormat(workerAutoWageCost) +'<br/>Pay wages automatically.<div class="clear"></div></div>');
+                }else{
+                    $('#autowage_upgrade_box').hide();
+                }
 	}
 
 	/* UPGRADING FUNCTIONS */
@@ -973,6 +1008,7 @@ $(document).ready(function() {
 		if (shrineHealth == 0 && money >= pickaxes['underworld'].price) {
 			pickaxe_type = 'underworld';
 			money -= pickaxes['underworld'].price;
+                        updateValues();
 		}
 	}
 
@@ -980,6 +1016,7 @@ $(document).ready(function() {
 		if (ebHealth <= 0 && money >= pickaxes['ender'].price) {
 			pickaxe_type = 'ender';
 			money -= pickaxes['ender'].price;
+                        updateValues();
 		}
 	}
 
@@ -987,8 +1024,17 @@ $(document).ready(function() {
 		if (pickaxe_type == 'ender' && money >= pickaxes['final'].price) {
 			pickaxe_type = 'final';
 			money -= pickaxes['final'].price;
+                        updateValues();
 		}
 	}
+        
+        function upgradeAutoWage(){
+            if(money >= workerAutoWageCost){
+                money -= workerAutoWageCost;
+                workerAutoWage = true;
+                updateValues();
+            }
+        }
 
 	function befriendGolem() {
 		if (money >= golemCost) {
@@ -1161,37 +1207,38 @@ $(document).ready(function() {
 						workerHappiness++;
 				}
 
-				//possibility of losing a worker
-				var possibility = (100 - workerHappiness);
+                                if(workerHappiness < 91){
+                                    //possibility of losing a worker
+                                    var possibility = (100 - workerHappiness);
 
-				if (rand(0, 100) <= possibility) {
-					//choose a random worker type
-					var quitter = false;
-					var workerTypes = Object.keys(workers);
-					while (!quitter) {
-						var type = workerTypes[rand(0, workerTypes.length)];
+                                    if (rand(0, 100) <= possibility) {
+                                            //choose a random worker type
+                                            var quitter = false;
+                                            var workerTypes = Object.keys(workers);
+                                            while (!quitter) {
+                                                    var type = workerTypes[rand(0, workerTypes.length)];
 
-						//make sure they have at least one of this worker
-						if (employed[type][0] > 0)
-							quitter = type;
-					}
+                                                    //make sure they have at least one of this worker
+                                                    if (employed[type][0] > 0)
+                                                            quitter = type;
+                                            }
 
-					employed[quitter][0]--;
-					popup('I QUIT!', '<img src="' + workers[quitter].img + '" style="margin-right:6px;" width="40" height="40" class="left">A ' + workers[quitter].name + ' just quit due to the low worker happiness levels. More workers will quit if you don\'t increase worker happiness levels!', '', 0);
-				}
+                                            employed[quitter][0]--;
+                                            popup('I QUIT!', '<img src="' + workers[quitter].img + '" style="margin-right:6px;" width="40" height="40" class="left">A worker just quit due to the low worker happiness levels. More workers will quit if you don\'t increase worker happiness levels!', '', 0);
+                                    }
+                                }
 
 				workerHappinessFunc();
 			}
-		}, 30000);
+		}, 60000);
 	}
 
 	function calculateWorkerWages() {
 		//a workers "wage property is the value of how much you will pay
 		//per worker when the page time is up
-
+                
+                var d = new Date().getTime();
 		if ((workerCurrentWages < workerTotalWages) || workerTotalWages == 0) {
-			var d = new Date().getTime();
-
 			//wages variables
 			var wages = 0;
 			var totalWages = 0;
@@ -1210,6 +1257,12 @@ $(document).ready(function() {
 			workerTotalWages = totalWages;
 			workerCurrentWages = (wages > totalWages) ? totalWages : wages;
 		}
+                
+                if(workerCurrentWages == workerTotalWages && workerTotalWages != 0 && workerAutoWage && money >= workerTotalWages){
+                    workersLastPaid = d;
+                    money -= workerTotalWages;
+                    workerCurrentWages = 0;
+                }
 	}
 
 	function payWages() {
@@ -1218,6 +1271,7 @@ $(document).ready(function() {
 			if (money >= workerTotalWages) {
 				money -= workerTotalWages;
 				workersLastPaid = new Date().getTime();
+                                workerCurrentWages = 0;
 			} else {
 				popup('WHOOPS!', 'You don\'t have enough money to pay your workers\' wages.');
 			}
@@ -1226,10 +1280,10 @@ $(document).ready(function() {
 
 	function showWorkers() {
 		var d = new Date().getTime();
-		var html = '<tr><td><button name="toggleworkers">TURN WORKERS ' + ((workerToggle) ? 'OFF' : 'ON') + '</button></td><td style="text-align:left;" colspan="2"><b>WORKER HAPPINESS:</b> ' + workerHappiness + '/100<br/>';
+		var html = '<tr><td><button name="toggleworkers">TURN WORKERS ' + ((workerToggle) ? 'OFF' : 'ON') + '</button></td><td style="text-align:left;" colspan="3"><b>WORKER HAPPINESS:</b> ' + workerHappiness + '/100<br/>';
 		html += '<button name="pay_wages" ' + (((d - workersLastPaid < workerPayCycle) || workersLastPaid == 0) ? 'disabled="disabled"' : '') + '>';
 		html += 'Pay Wages ($' + numberFormat(workerCurrentWages) + '/$' + numberFormat(workerTotalWages) + ')</button></td></tr>';
-		html += '<tr><td colspan="3"><hr></td></tr>';
+		html += '<tr><td colspan="4"><hr></td></tr>';
 
 		for (var worker in workers) {
 			if ((worker == 'enderminer' && ebHealth <= 0) || worker != 'enderminer') {
@@ -1318,12 +1372,14 @@ $(document).ready(function() {
 					'text' : 'Yes',
 					'func' : function() {
 						if ( (money >= totalcost) && (newWorkerCount <= Math.floor(workers[workerType].limit * maxWorkerMultiplier) )) {
-							money -= totalcost;
+                                                    if((employed[workerType][0]+i) <= workers[workerType].limit){
+                                                        money -= totalcost;
 							employed[workerType][0] += i;
 							updateValues();
 
 							if (workersLastPaid == 0)
 								workersLastPaid = new Date().getTime();
+                                                    }
 						}
 					}
 				},
@@ -1441,7 +1497,7 @@ $(document).ready(function() {
 					var totalcost = 1000000 * (Math.pow(1.0005, scientists));
 
 					var i = 1;
-					for (i; i >= amount; i++) {
+					for (i; i <= amount; i++) {
 						var newAmount = 1000000 * (Math.pow(1.0005, scientists + i));
 						totalcost += newAmount;
 					}
@@ -1449,6 +1505,7 @@ $(document).ready(function() {
 					if (money >= totalcost) {
 						scientists += amount;
 						money -= totalcost;
+                                                updateValues();
 						$('#employment span[name="scientists_owned"]').html(scientists);
 					} else {
 						popup('WOOPS', 'You can\'t afford to purchase that many scientists!', '', 0);
@@ -1631,8 +1688,9 @@ $(document).ready(function() {
 				'text' : 'Reset to 0',
 				'func' : function() {
 					$.each($('#popup input[name|="maxore"]'), function(i, v) {
-						$(this).val('0');
+						vaultStorageSettings[($(this).attr('name').split('-')[1])] = 0;
 					});
+                                        updateVaultSettings();
 				}
 			},
 			'cancel' : {
@@ -1747,36 +1805,41 @@ $(document).ready(function() {
 
 	/* GAME LOADING/SAVING FUNCTIONS */
 	function load() {
+            
 		$('#loading_screen').show();
 
-		var cookie = getCookie('saved_game');
-
-		if ( typeof cookie != 'undefined' && cookie.length > 0) {
-			cookie = decodeURIComponent(escape(Base64.decode(cookie)));
-			cookie = JSON.parse(cookie);
+                var save = (typeof localStorage.save == 'undefined' && typeof getCookie('saved_game') != 'undefined') ? getCookie('saved_game') : localStorage.save;
+                
+		if ((typeof localStorage.save != 'undefined' && localStorage.length > 0) || typeof getCookie('saved_game') != 'undefined') {
+			save = decodeURIComponent(escape(Base64.decode(save)));
+			save = JSON.parse(save);
 
 			//loop through object and load each element into session
-			for (var key in cookie) {
-				var obj = cookie[key];
+			for (var key in save) {
+				var obj = save[key];
 				window["" + key] = obj;
 			}
+                        
+                        if(typeof getCookie('saved_game') != 'undefined'){
+                            saveGame(true);
+                            document.cookie = 'saved_game=; expires=Sun, 25 Dec 2000 20:47:11 UTC; path=/';
+                            document.cookie = 'last_save=; expires=Sun, 25 Dec 2000 20:47:11 UTC; path=/';
+                        }
 
 			//eval(cookie);
-			eval(Base64.decode('aWYodXBkYXRlPDkpe3Byb2ZpbGVJRD1zYXZlczt9'));
+			eval(Base64.decode('aWYodXBkYXRlPDkpe3Byb2ZpbGVJRD1nZWxkO30='));
 
-			lastCookie = cookie;
+			lastCookie = save;
 
 			//update message
-			if (update < 19) {
+			/*if (update < 2) {
 				if (confirm("There's been an update! Would you like to see the changes?"))
 					window.open('http://www.rscharts.com/game/changelog.txt?v=2');
 
-				/*if(confirm("For a better experience, it's best if you reset your progress. Press O.K. to reset your progress, or cancel to continue on with your current game.")){
-				 document.cookie = 'saved_game=; expires=Sun, 25 Dec 2020 20:47:11 UTC; path=/';
-				 document.cookie = 'last_save=; expires=Sun, 25 Dec 2020 20:47:11 UTC; path=/';
-				 location.reload();
-				 }*/
-			}
+				if(confirm("For a better experience, it's best if you reset your progress. Press O.K. to reset your progress, or cancel to continue on with your current game.")){
+                                    location.reload();
+                                }
+			}*/
 
 			//set our portal image to the appropriate image
 			if (portalBuilt)
@@ -1804,7 +1867,12 @@ $(document).ready(function() {
 				} else if (ebHealth > 0) {
 					$('#enderbossFight div[name="health"] span').css('width', 100 - Math.round((ebHealth / 5000000) * 100) + '%');
 				}
-			}
+			}else{
+                            //ok so the last bost currently in the game has been defeated
+                            //lets start generating random bosses
+
+                            //randomBoss();
+                        }
 
 			//get last save time
 			var lastSaveCookie = getCookie('last_save');
@@ -1901,7 +1969,7 @@ $(document).ready(function() {
 					updateValues();
 					updateVaultDisplay();
 					displayCurrentBoss();
-					//donationGoal();
+					donationGoal();
 					checkForUpdates();
 
 					if (hasAutoPilot) {
@@ -1914,129 +1982,107 @@ $(document).ready(function() {
 		}
 	}
 
-	function getPollResults() {
-		$.ajax({
-			url : 'poll.php',
-			type : 'POST',
-			dataType : 'JSON',
-			data : {
-				results : 'getdemdamnresults'
-			},
-			success : function(r) {
-				$('#poll div[name="vote"]').hide();
-				$('#poll div[name="results"]').show();
-
-				var yesPercent = Math.round((r.yes / r.total) * 100);
-				var noPercent = Math.round((r.no / r.total) * 100);
-
-				$('#poll div[name="results"] div[name="yes"]').css('width', yesPercent + '%');
-				$('#poll div[name="results"] div[name="yes"]').text(r.yes + ' votes');
-
-				$('#poll div[name="results"] div[name="no"]').css('width', noPercent + '%');
-				$('#poll div[name="results"] div[name="no"]').text(r.no + ' votes');
-			}
-		});
-	}
-
 	//room for improvement, Not anymore ;)
-	function saveGame() {
-		setTimeout(function() {
-			saves++;
-			eval(Base64.decode('cHJvZmlsZUlEKys7'));
+	function saveGame(ignore) {
+                if(typeof ignore == 'undefined'){
+                    geld++;
+                    eval(Base64.decode('cHJvZmlsZUlEKys7'));
+                }
 
-			var saveCookie = {};
+                var saveString = {};
 
-			//all values can be changed to be exactly equal to what they are
-
-			saveCookie['money'] = money;
-			saveCookie['totalMoneyEarned'] = totalMoneyEarned;
-			saveCookie['vault'] = vault;
-			saveCookie['vaultStorageSettings'] = vaultStorageSettings;
-			saveCookie['vault_max_storage'] = vault_max_storage;
-			saveCookie['pickaxe_type'] = pickaxe_type;
-			saveCookie['hasAutoPilot'] = ((hasAutoPilot) ? true : false);
-			saveCookie['befriendedGolem'] = ((befriendedGolem) ? true : false);
-			saveCookie['befriendedWitch'] = ((befriendedWitch) ? true : false);
-			saveCookie['witchHasOffered'] = ((witchHasOffered) ? true : false);
-			saveCookie['golemHasOffered'] = ((golemHasOffered) ? true : false);
-			saveCookie['canGetZombieProtection'] = ((canGetZombieProtection) ? true : false);
-			saveCookie['zbChance'] = zbChance;
-			saveCookie['zbMoneyStolen'] = zbMoneyStolen;
-			saveCookie['employed'] = employed;
-			saveCookie['dcUnlocked'] = ((dcUnlocked) ? true : false);
-			saveCookie['dcSoldiers'] = dcSoldiers;
-			saveCookie['dcAttacks'] = dcAttacks;
-			saveCookie['dcIntro'] = ((dcIntro) ? true : false);
-			saveCookie['dcOption'] = dcOption;
-			saveCookie['dcChance'] = dcChance;
-			saveCookie['dcRanAway'] = ((dcRanAway) ? true : false);
-			saveCookie['employedSoldiers'] = employedSoldiers;
-			saveCookie['portalParts'] = portalParts;
-			saveCookie['portalBuilt'] = ((portalBuilt) ? true : false);
-			saveCookie['portalLit'] = ((portalLit) ? true : false);
-			saveCookie['portalWarning'] = ((portalWarning) ? true : false);
-			saveCookie['ulUnlocked'] = ((ulUnlocked) ? true : false);
-			saveCookie['ulIntro'] = ((ulIntro) ? true : false);
-			saveCookie['ulSoldiers'] = ulSoldiers;
-			saveCookie['ulChance'] = ulChance;
-			saveCookie['statLootMoney'] = statLootMoney;
-			saveCookie['statEnemiesKilled'] = statEnemiesKilled;
-			saveCookie['statDefendersKilled'] = statDefendersKilled;
-			saveCookie['statBattlesWon'] = statBattlesWon;
-			saveCookie['statBattlesLost'] = statBattlesLost;
-			saveCookie['shrineHealth'] = shrineHealth;
-			saveCookie['uniqueID'] = uniqueID;
-			saveCookie['profileID'] = profileID;
-			saveCookie['achievements'] = achievements;
-			saveCookie['ownsResearchLab'] = ((ownsResearchLab) ? true : false);
-			saveCookie['scientists'] = scientists;
-			saveCookie['projects'] = projects;
-			saveCookie['finishedResearch'] = finishedResearch;
-			saveCookie['ebIntro'] = ((ebIntro) ? true : false);
-			saveCookie['ebHint'] = ((ebHint) ? true : false);
-			saveCookie['portal'] = portal;
-			saveCookie['ebAttacks'] = ebAttacks;
-			saveCookie['ebSoldiers'] = ebSoldiers;
-			saveCookie['ebOrbs'] = ebOrbs;
-			saveCookie['ebHealth'] = ebHealth;
-			saveCookie['saves'] = saves;
-			saveCookie['xoxo'] = ((xoxo) ? true : false);
-			saveCookie['workerOPMResearch'] = workerOPMResearch;
-			saveCookie['feedbackIDs'] = feedbackIDs;
-			saveCookie['maxWorkerMultiplier'] = maxWorkerMultiplier;
-			saveCookie['workersLastPaid'] = workersLastPaid;
-			saveCookie['workerHappiness'] = workerHappiness;
-
-			saveCookie['update'] = 22;
-			//console.log(saveCookie);
-			saveCookie = JSON.stringify(saveCookie);
-			//console.log(saveCookie);
-			saveCookie = Base64.encode(unescape(encodeURIComponent(saveCookie)));
-
-			if (saveCookie != lastCookie) {
-				lastSave = new Date().getTime();
-				document.cookie = 'saved_game=' + saveCookie + '; expires=Sun, 25 Dec 2020 20:47:11 UTC; path=/';
-				document.cookie = 'last_save=' + lastSave + '; expires=Sun, 25 Dec 2020 20:47:11 UTC; path=/';
-				lastCookie = saveCookie;
-			}
-
-			saveGame();
-		}, 20000);
+                //all values can be changed to be exactly equal to what they are
+                saveString['money'] = money;
+                saveString['totalMoneyEarned'] = totalMoneyEarned;
+                saveString['vault'] = vault;
+                saveString['vaultStorageSettings'] = vaultStorageSettings;
+                saveString['vault_max_storage'] = vault_max_storage;
+                saveString['pickaxe_type'] = pickaxe_type;
+                saveString['hasAutoPilot'] = ((hasAutoPilot) ? true : false);
+                saveString['befriendedGolem'] = ((befriendedGolem) ? true : false);
+                saveString['befriendedWitch'] = ((befriendedWitch) ? true : false);
+                saveString['witchHasOffered'] = ((witchHasOffered) ? true : false);
+                saveString['golemHasOffered'] = ((golemHasOffered) ? true : false);
+                saveString['canGetZombieProtection'] = ((canGetZombieProtection) ? true : false);
+                saveString['zbChance'] = zbChance;
+                saveString['zbMoneyStolen'] = zbMoneyStolen;
+                saveString['employed'] = employed;
+                saveString['dcUnlocked'] = ((dcUnlocked) ? true : false);
+                saveString['dcSoldiers'] = dcSoldiers;
+                saveString['dcAttacks'] = dcAttacks;
+                saveString['dcIntro'] = ((dcIntro) ? true : false);
+                saveString['dcOption'] = dcOption;
+                saveString['dcChance'] = dcChance;
+                saveString['dcRanAway'] = ((dcRanAway) ? true : false);
+                saveString['employedSoldiers'] = employedSoldiers;
+                saveString['portalParts'] = portalParts;
+                saveString['portalBuilt'] = ((portalBuilt) ? true : false);
+                saveString['portalLit'] = ((portalLit) ? true : false);
+                saveString['portalWarning'] = ((portalWarning) ? true : false);
+                saveString['ulUnlocked'] = ((ulUnlocked) ? true : false);
+                saveString['ulIntro'] = ((ulIntro) ? true : false);
+                saveString['ulSoldiers'] = ulSoldiers;
+                saveString['ulChance'] = ulChance;
+                saveString['statLootMoney'] = statLootMoney;
+                saveString['statEnemiesKilled'] = statEnemiesKilled;
+                saveString['statDefendersKilled'] = statDefendersKilled;
+                saveString['statBattlesWon'] = statBattlesWon;
+                saveString['statBattlesLost'] = statBattlesLost;
+                saveString['shrineHealth'] = shrineHealth;
+                saveString['uniqueID'] = uniqueID;
+                saveString['profileID'] = profileID;
+                saveString['achievements'] = achievements;
+                saveString['power'] = getArmyStrength();
+                saveString['totalWorkerOPM'] = getWorkerTotalOPM();
+                saveString['ownsResearchLab'] = ((ownsResearchLab) ? true : false);
+                saveString['scientists'] = scientists;
+                saveString['projects'] = projects;
+                saveString['finishedResearch'] = finishedResearch;
+                saveString['ebIntro'] = ((ebIntro) ? true : false);
+                saveString['ebHint'] = ((ebHint) ? true : false);
+                saveString['portal'] = portal;
+                saveString['ebAttacks'] = ebAttacks;
+                saveString['ebSoldiers'] = ebSoldiers;
+                saveString['ebOrbs'] = ebOrbs;
+                saveString['ebHealth'] = ebHealth;
+                saveString['geld'] = geld;
+                saveString['workerOPMResearch'] = workerOPMResearch;
+                saveString['feedbackIDs'] = feedbackIDs;
+                saveString['maxWorkerMultiplier'] = maxWorkerMultiplier;
+                saveString['workersLastPaid'] = workersLastPaid;
+                saveString['workerHappiness'] = workerHappiness;
+                saveString['workerAutoWage'] = ((workerAutoWage) ? true : false);
+                saveString['update'] = 5;
+                
+                saveString = JSON.stringify(saveString);
+                saveString = Base64.encode(unescape(encodeURIComponent(saveString)));
+                
+                if (saveString != lastCookie) {
+                        lastSave = new Date().getTime();
+                        localStorage.save = saveString;
+                        lastCookie = saveString;
+                }
+            
+                if(typeof ignore == 'undefined'){
+                    setTimeout(function() {
+                            saveGame();
+                    }, 20000);
+                }else{ 
+                    return saveString;
+                }
 	}
 
 	function hardSave() {
 		var data = saveGame(true);
 		var d = new Date().getTime();
 
-		if ((d - lastHardSave) > 1800000) {
+		if ((d - lastHardSave) > 300000) {
 			lastHardSave = d;
 
 			$.ajax({
 				url : 'account/hardsave.php',
 				type : 'POST',
-				data : {
-					data : data
-				},
+				data : {data : data},
 				success : function(r) {
 					switch(r) {
 						case 'success':
@@ -2055,7 +2101,7 @@ $(document).ready(function() {
 				}
 			});
 		} else {
-			alert('You can only submit a hardsave once every 30 minutes.');
+			alert('You can only submit a hardsave once every 5 minutes.');
 		}
 	}
 
@@ -2090,14 +2136,7 @@ $(document).ready(function() {
 				$.ajax({
 					url : 'highscores/highscores_submit.php',
 					type : 'POST',
-					data : {
-						money_earned : totalMoneyEarned,
-						pickaxe : pickaxe_type,
-						worker_opm : getWorkerTotalOPM(),
-						army_strength : getArmyStrength(),
-						achievements : '',
-						uniqueID : uniqueID
-					},
+					data : {data : saveGame(true)},
 					success : function(r) {
 						if (r == 'login') {
 							alert('You need to be logged in to submit your score.');
@@ -2465,6 +2504,11 @@ $(document).ready(function() {
 
 		updateValues();
 	}
+        
+        //simulate 'dat battle, nnngh!
+	function randBossBattle(bossVars) {
+	    alert(bossVars['soldiers']);
+	}
 
 	function getWorkerTotalOPM() {
 		var opm = 0;
@@ -2588,9 +2632,7 @@ $(document).ready(function() {
 			}
 
 			$('#popup').show(750);
-			$('html, body').animate({
-				scrollTop : 0
-			}, 'slow');
+			$('html, body').animate({scrollTop : 0}, 'slow');
 		} else {
 			//push to stack
 			var args = [0, title, message, buttons, time];
@@ -2792,37 +2834,37 @@ $(document).ready(function() {
 		}, 750);
 	}
 
-	/*function donationGoal(){
+	function donationGoal(){
 	 //get the latest donation goal info
-	 $.ajax({
-	 url:'donation.php?get=goal',
-	 success : function(data){
-	 if(data.length>0){
-	 data = data.split('-');
-	 var amount = parseInt(data[0]);
-	 var goal = parseInt(data[1]);
-	 var percent = Math.round((amount/goal)*100);
+            $.ajax({
+            url:'donation.php?get=goal',
+            success : function(data){
+                    if(data.length>0){
+                        data = data.split('-');
+                        var amount = parseInt(data[0]);
+                        var goal = parseInt(data[1]);
+                        var percent = Math.round((amount/goal)*100);
 
-	 $('#donation_goal').html('<hr><b>Monthly Goal ($'+ goal +')</b><br/><div class="bar" name="donation_goal" style="width:200px;"><span style="width:0%;">0%</span></div>');
+                        $('#donation_goal').html('<hr><b>Monthly Goal ($'+ goal +')</b><br/><div class="bar" name="donation_goal" style="width:200px;"><span style="width:0%;">0%</span></div>');
 
-	 var x = 0;
-	 var interval = setInterval(function(){
-	 x++;
-	 if(x <= percent){
-	 if(x <= 100)
-	 $('#donation_goal div[name="donation_goal"] span').css('width', x+'%');
+                        var x = 0;
+                        var interval = setInterval(function(){
+                            x++;
+                            if(x <= percent){
+                                if(x <= 100)
+                                    $('#donation_goal div[name="donation_goal"] span').css('width', x+'%');
 
-	 $('#donation_goal div[name="donation_goal"] span').html(x+'%');
-	 }else{
-	 clearInterval(interval);
+                                $('#donation_goal div[name="donation_goal"] span').html(x+'%');
+                            }else{
+                                clearInterval(interval);
+                            }
+                        },25);
+                    }else{
+                        $('#donation_goal').html('<font size="2" color="red">(failed to retrieve donation goal)</font>');
+                    }
+                }
+            });
 	 }
-	 },25);
-	 }else{
-	 $('#donation_goal').html('<font size="2" color="red">(failed to retrieve donation goal)</font>');
-	 }
-	 }
-	 });
-	 }*/
 
 	/* listeners/handlers */
 	$('button[name="mine"]').click(function() {
@@ -2847,6 +2889,7 @@ $(document).ready(function() {
 	$(document).on('click', 'a[name="upgrade_witch"]', befriendWitch);
 	$(document).on('click', 'a[name="upgrade_buildportal"]', buildPortal);
 	$(document).on('click', 'a[name="upgrade_igniteportal"]', ignitePortal);
+        $(document).on('click', 'a[name="upgrade_autowage"]', upgradeAutoWage);
 	$(document).on('click', 'a[name="portal"]', enterPortal);
 
 	//friends
@@ -2983,7 +3026,7 @@ $(document).ready(function() {
 		var html = '<p><b>Why is this game called "a game?"</b><br/>I haven\'t named it yet.</p>';
 		html += '<p><b>Is it normal for the screen to shake?</b><br/>Yes, after you reach the Underlord, screen shaking is suppose to resemble an earthquake.</p>';
 		html += '<p><b>Can soldiers other than templars go into the end?</b><br/>Yes. Templars are only required in the underworld.</p>';
-		html += '<p><b>What are worker wages?</b><br/>Every 30 minutes your workers will want to be paid. If you pay them, their happiness either increases/stays the same. If they are not paid, they get angry causing their productivity to go down.</p>';
+		html += '<p><b>What are worker wages?</b><br/>Every 20 minutes your workers will want to be paid. If you pay them, their happiness either increases/stays the same. If they are not paid, they get angry causing their productivity to go down; they may even quit!</p>';
 		html += '<p><b>When will new content be added?</b><br/>As soon as possible!</p>';
 		html += '<p><b>How do I get portal parts?</b><br/>Through Don Chikolio. No more hints. ;)</p>';
 		html += '<p><b>Will there be new bosses?</b><br/>Yep!</p>';
@@ -3012,8 +3055,7 @@ $(document).ready(function() {
 	//reset game
 	$(document).on('click', '#resetgame', function() {
 		if (confirm("Are you SURE you want to reset all of your progress? Press O.K. to continue with the reset.")) {
-			document.cookie = 'saved_game=; expires=Sun, 25 Dec 2020 20:47:11 UTC; path=/';
-			document.cookie = 'last_save=; expires=Sun, 25 Dec 2020 20:47:11 UTC; path=/';
+                        window.localStorage.clear();
 			location.reload();
 		}
 	});

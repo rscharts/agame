@@ -11,6 +11,7 @@
         <script type="text/javascript" src="game/items.js?v=1.42"></script>
         <script type="text/javascript" src="game/game_dev.js?v=1.49"></script>
         <script type="text/javascript" src="game/research.js?v=4"></script>
+        <script type="text/javascript" src="game/scenarios.js?v=1"></script>
         <link rel="stylesheet" type="text/css" href="css/style.css?v=1.30">
     </head>
     <body>
@@ -37,9 +38,9 @@
                     <a href="#" style="color:green;" id="faq">F.A.Q.</a>
                     <br/><br/>
                     <a href="#" style="color:green;" id="ore_prices">ORE PRICES</a>
-                    <!--<div id="donation_goal" style="margin:15px 0px;">
+                    <div id="donation_goal" style="margin:15px 0px;">
                         <img src="game/img/icons/loading2.gif">
-                    </div>-->
+                    </div>
                     <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
                         <input type="hidden" name="cmd" value="_s-xclick">
                         <input type="hidden" name="hosted_button_id" value="GCDL5A7NY9TRE">

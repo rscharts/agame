@@ -177,8 +177,8 @@ var workers = {
         'opmModifier' : 0,
         'price' : 3000,
         'sell' : 1750,
-        'wages' : 100,
-        'limit' : 200
+        'wages' : 300,
+        'limit' : 900
     },
     'miner' : {
         'name' : 'Dedicated Miner',
@@ -188,8 +188,8 @@ var workers = {
         'opmModifier' : 0,
         'price' : 15000,
         'sell' : 7250,
-        'wages' : 200,
-        'limit' : 180
+        'wages' : 400,
+        'limit' : 800
     },
     'miner2' : {
         'name' : 'Experienced Miner',
@@ -199,8 +199,8 @@ var workers = {
         'opmModifier' : 0,
         'price' : 50000,
         'sell' : 25000,
-        'wages' : 350,
-        'limit' : 160
+        'wages' : 600,
+        'limit' : 700
     },
     'heavenlyminer' : {
         'name' : 'Heavenly Miner',
@@ -210,8 +210,8 @@ var workers = {
         'opmModifier' : 0,
         'price' : 200000,
         'sell' : 100000,
-        'wages' : 600,
-        'limit' : 140
+        'wages' : 1050,
+        'limit' : 600
     },
     'hellminer' : {
         'name' : 'Hellish Miner',
@@ -221,8 +221,8 @@ var workers = {
         'opmModifier' : 0,
         'price' : 5000000,
         'sell' : 1000000,
-        'wages' : 1000,
-        'limit' : 120
+        'wages' : 1500,
+        'limit' : 500
     },
     'enderminer' : {
         'name' : 'End Miner',
@@ -232,8 +232,8 @@ var workers = {
         'opmModifier' : 0,
         'price' : 15000000,
         'sell' : 7500000,
-        'wages' : 1500,
-        'limit' : 100
+        'wages' : 2750,
+        'limit' : 500
     }
 }
 

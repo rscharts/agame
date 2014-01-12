@@ -132,7 +132,7 @@ var research_projects = {
         'resources' : {},
         'description' : 'OPM output for each worker increased 2%',
         'func' : function(){
-            research_projects['workeropm'].time = Math.round(Math.pow(1000*workerOPMResearch, 1.1));
+            research_projects['workeropm'].time = Math.round(Math.pow(1000*workerOPMResearch, 1.00005));
             
             for(var worker in workers)
                 workers[worker].opmModifier = Math.round((workers[worker].opm*.02)*workerOPMResearch);
@@ -189,5 +189,18 @@ var research_projects = {
         'resources' : {'netherquartz':7500},
         'description' : 'Reconfigure the portal to connect to the unknown.',
         'func' : function(){}
+    },
+    'workerlimit1' : {
+        'name' : 'Increase worker limit 1',
+        'img' : 'game/img/icons/workeropm1.png',
+        'price' : 250000000,
+        'time' : 2000,
+        'requires' : [],
+        'resources' : {},
+        'description' : 'Increase all worker limits +25.',
+        'func' : function(){
+            for(var worker in workers)
+                workers[worker].limit += 25
+        }
     }
 }
