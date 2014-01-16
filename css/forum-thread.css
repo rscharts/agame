@@ -1,0 +1,26 @@
+table.reply {
+    width:100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+table.reply td {vertical-align:top;}
+
+/* user post */
+table.reply .left {
+    width:20%;
+    background-color:#448344;
+    text-align:center;
+    border:1px solid #2F5B2F;
+    border-right:none;
+}
+table.reply .right {background-color:#80bd80;width:80%;
+    border:1px solid #2F5B2F;
+}
+
+/* moderator post */
+table.reply .left .mod {background-color:#99a5bd;}
+table.reply .right .mod {background-color:#c2cad8;}
+
+/* admin post */
+table.reply .left .admin {background-color:#99a5bd;}
+table.reply .right .admin {background-color:#c2cad8;}

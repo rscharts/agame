@@ -89,6 +89,17 @@ var pickaxes = {
             'price' : 500000000000,
             'canbeupgradedto' : false 
         },
+        'antimatter' : {
+            'name' : 'Anti-Matter Pickaxe',
+            'img' : 'game/img/items/pickaxeAntimatter.png',
+            'speed' : 1000,
+            'sharpness' : 7,
+            'max' : 30000,
+            'dropchance' : 0,
+            'price' : 0,
+            'bc' : 350,
+            'canbeupgradedto' : false 
+        },
         'helldrill' : {
             'name' : 'Hell Drill',
             'img' : 'game/img/items/drillHell.png',
@@ -242,7 +253,7 @@ var soldiers = {
         'name' : 'Knight',
         'img' : 'game/img/npc/soldier1.png',
         'kpe' : 1,
-        'price' : 100,
+        'price' : 300,
         'sell' : 50,
         'underworld_able' : false
     },
@@ -250,7 +261,7 @@ var soldiers = {
         'name' : 'Skilled Knight',
         'img' : 'game/img/npc/soldier2.png',
         'kpe' : 5,
-        'price' : '400',
+        'price' : '1000',
         'sell' : 120,
         'underworld_able' : false
     },

@@ -31,6 +31,18 @@ body {
     z-index:100;
 }
 
+#warningbar {
+    top:0;
+    position:fixed;
+    width:100%;
+    background-color:#f4586b;
+    border-bottom:1px solid #48050d;
+    color:white;
+    font-weight:bold;
+    text-align:center;
+    z-index:100;
+}
+
 #gamecontainer {
     margin:0 auto;
     padding:15px;
@@ -221,6 +233,12 @@ table[name="stats"] {
     font-size:13px;
     overflow:hidden;
     text-align:right;
+}
+
+.enderBox {
+    border:1px solid #1d4a4e;
+    background-color:#21565b;
+    color:#389199;
 }
 
 

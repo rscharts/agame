@@ -1,0 +1,139 @@
+body {
+    text-align:center;
+    background:url("images/bg.png");
+    background-repeat:repeat;
+    margin:0;
+    padding:0;
+}
+a{
+    color:#004906;
+    text-decoration:none;
+}
+
+a img {
+    border:none;
+}
+
+input[type='text'],textarea {
+    border:1px solid grey;
+}
+
+#container {
+    margin:0 auto;
+    width:950px;
+    text-align:left;
+}
+
+#navbar {
+    top:0;
+    position:fixed;
+    z-index:100;
+    padding-top:29px;
+    height:69px;
+    width:100%;
+    background: url("images/bg_top.png");
+    background-repeat: repeat-x;
+    text-align:center;
+    color:#EA5D00;
+    font-size:27px;
+}
+#navbar a {
+    color:#EA5D00;
+}
+
+.forum {
+    margin:0 auto;
+    margin-top:75px;
+    width:800px;
+    margin-bottom:20px;
+    padding-bottom:15px;
+    background: url("images/bg_transparent.png");
+}
+
+.forum .large {
+    width:900px;
+}
+
+.forum span.title {
+    width:100%;
+    height:45px;
+    
+    display:inline-block;
+    text-align:center;
+    background: url("images/bg_title.png");
+    background-repeat: repeat-x;
+    background-color:#3D2A1C;
+    margin:0;
+    padding:0;
+}
+
+/*.forum span.title span.titletext{
+    display:inline-block;
+    margin:0 auto;
+    margin-top:10px;
+    padding:4px;
+    width:325px;
+    text-align:center;
+    background: url("images/bg_transparent_orange.png");
+    -moz-border-radius: 50px;
+    border-radius: 50px;
+    font-weight:bold;
+}*/
+
+.forum span.title span.titletext{
+    display:inline-block;
+    margin-top:10px;
+    padding:4px;
+    color:white;
+    font-weight:bold;
+}
+
+.forum p.description {
+    margin:7px;
+    width:60%;
+    float:left;
+}
+
+.forum p.rightInfo {
+    margin:7px;
+    width:35%;
+    text-align:left;
+    float:right;
+}
+
+.clearGreenSpan {
+    width:100%;
+    margin:0;
+    margin-bottom:10px;
+    padding:6px;
+    background: url("images/bg_transparent_green.png");
+}
+
+.clearOrangeSpan {
+    width:100%;
+    margin:0;
+    margin-bottom:10px;
+    padding:6px;
+    background: url("images/bg_transparent_orange.png");
+}
+
+tr.dark {
+    background: url("images/bg_transparent_darker.png");
+}
+
+.clearGreenSpan a, .clearOrangeSpan a{
+    color:black;
+    font-weight:bold;
+}
+
+.innerContainer {
+    margin:10px;
+}
+
+.forumbuttons {
+    clear:both;
+}
+
+.clear {
+    clear:both;
+}

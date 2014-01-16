@@ -97,6 +97,18 @@ var research_projects = {
             vault_max_storage = 25000;
         }
     },
+    'storage4' : {
+        'name' : 'Storage 4',
+        'img' : 'game/img/icons/storage2.png',
+        'price' : 1000000000,
+        'time' : 2000,
+        'requires' : ['storage3'],
+        'resources' : {},
+        'description' : 'Increases vault storage to 35000.',
+        'func' : function(){
+            vault_max_storage = 35000;
+        }
+    },
     'attack1' : {
         'name' : 'Attack 1',
         'img' : 'game/img/icons/attack1.png',
@@ -116,6 +128,19 @@ var research_projects = {
         'price' : 1000000,
         'time' : 480,
         'requires' : ['attack1'],
+        'resources' : {},
+        'description' : 'Increases all soldiers KPE +1. This research does stack.',
+        'func' : function(){
+            for(var soldier in soldiers)
+                soldiers[soldier].kpe += 1
+        }
+    },
+    'attack3' : {
+        'name' : 'Attack 3',
+        'img' : 'game/img/icons/attack3.png',
+        'price' : 250000000,
+        'time' : 920,
+        'requires' : ['attack2'],
         'resources' : {},
         'description' : 'Increases all soldiers KPE +1. This research does stack.',
         'func' : function(){
@@ -191,7 +216,7 @@ var research_projects = {
         'func' : function(){}
     },
     'workerlimit1' : {
-        'name' : 'Increase worker limit 1',
+        'name' : 'Worker Capacity 1',
         'img' : 'game/img/icons/workeropm1.png',
         'price' : 250000000,
         'time' : 2000,
@@ -201,6 +226,90 @@ var research_projects = {
         'func' : function(){
             for(var worker in workers)
                 workers[worker].limit += 25
+        }
+    },
+    'scientistupgrade1' : {
+        'name' : 'Mad Scientist 1',
+        'img' : 'game/img/icons/madscientist.png',
+        'price' : 1000000000,
+        'time' : 60000,
+        'requires' : [],
+        'resources' : {},
+        'description' : 'Increase scientist research speed to 3 seconds.',
+        'func' : function(){
+            scientistTime = 3;
+        }
+    },
+    'scientistupgrade2' : {
+        'name' : 'Mad Scientist 2',
+        'img' : 'game/img/icons/madscientist.png',
+        'price' : 5000000000,
+        'time' : 120000,
+        'requires' : ['scientistupgrade1'],
+        'resources' : {},
+        'description' : 'Increase scientist research speed to 5 seconds.',
+        'func' : function(){
+            scientistTime = 5;
+        }
+    },
+    'scientistupgrade3' : {
+        'name' : 'Mad Scientist 3',
+        'img' : 'game/img/icons/madscientist.png',
+        'price' : 50000000000,
+        'time' : 240000,
+        'requires' : ['scientistupgrade2'],
+        'resources' : {},
+        'description' : 'Increase scientist research speed to 10 seconds.',
+        'func' : function(){
+            scientistTime = 10;
+        }
+    },
+    'bossCap1' : {
+        'name' : 'Boss Difficutly Cap Increase 1',
+        'img' : 'game/img/icons/bosscapupgrade.png',
+        'price' : 250000000000,
+        'time' : 50000,
+        'requires' : [],
+        'resources' : {},
+        'description' : 'Increase the boss maximum difficulty to 50.',
+        'func' : function(){
+            bossDifficultyCap = 50;
+        }
+    },
+    'bossCap2' : {
+        'name' : 'Boss Difficutly Cap Increase 2',
+        'img' : 'game/img/icons/bosscapupgrade.png',
+        'price' : 500000000000,
+        'time' : 100000,
+        'requires' : ['bossCap1'],
+        'resources' : {},
+        'description' : 'Increase the boss maximum difficulty to 70.',
+        'func' : function(){
+            bossDifficultyCap = 70;
+        }
+    },
+    'bossCap3' : {
+        'name' : 'Boss Difficutly Cap Increase 3',
+        'img' : 'game/img/icons/bosscapupgrade.png',
+        'price' : 750000000000,
+        'time' : 150000,
+        'requires' : ['bossCap2'],
+        'resources' : {},
+        'description' : 'Increase the boss maximum difficulty to 90.',
+        'func' : function(){
+            bossDifficultyCap = 90;
+        }
+    },
+    'bossCap4' : {
+        'name' : 'Boss Difficutly Cap Increase 4',
+        'img' : 'game/img/icons/bosscapupgrade.png',
+        'price' : 1000000000000,
+        'time' : 200000,
+        'requires' : ['bossCap3'],
+        'resources' : {},
+        'description' : 'Increase the boss maximum difficulty to 110.',
+        'func' : function(){
+            bossDifficultyCap = 110;
         }
     }
 }

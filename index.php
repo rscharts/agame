@@ -5,14 +5,15 @@
         <title>A GAME</title>
         <script type="text/javascript" src="resources/jquery2.js"></script>
         <script type="text/javascript" src="resources/jquery-ui.js"></script>
+        <script type="text/javascript" src="resources/jsonfn.js"></script>
         <script type="text/javascript" src="resources/jQueryRotateCompressed.js"></script>
         <script type="text/javascript" src="resources/base64.js"></script>
         <script type="text/javascript" src="resources/perfectscrollbar.js"></script>
-        <script type="text/javascript" src="game/items.js?v=1.42"></script>
-        <script type="text/javascript" src="game/game_dev.js?v=1.49"></script>
-        <script type="text/javascript" src="game/research.js?v=4"></script>
-        <script type="text/javascript" src="game/scenarios.js?v=1"></script>
-        <link rel="stylesheet" type="text/css" href="css/style.css?v=1.30">
+        <script type="text/javascript" src="game/items.js?v=1.47"></script>
+        <script type="text/javascript" src="game/game.js?v=1.69"></script>
+        <script type="text/javascript" src="game/research.js?v=11"></script>
+        <script type="text/javascript" src="game/scenarios.js?v=7"></script>
+        <link rel="stylesheet" type="text/css" href="css/style.css?v=1.31">
     </head>
     <body>
         <div id="updatebar" class="hidden">
@@ -80,6 +81,8 @@
                         <tr>
                             <td><img src="game/img/icons/moneyBag.png" width="20" height="32"></td><td id="money_display"></td>
                             <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                            <td><img src="game/img/icons/bossCurrency.png" width="20" height="32"></td><td id="bc_display" class="displaytext">0</td>
+                            <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
                             <td><img src="game/img/icons/vault.png" width="20" height="32"></td><td id="vault_display" class="displaytext"></td>
                             <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
                             <td id="zombie_icon"><img src="game/img/npc/zombie.png" width="32" height="32"></td><td id="zombie_display" class="displaytext"></td>
@@ -92,7 +95,7 @@
                             <td id="enderboss_display" class="hidden displaytext"></td>
                             <td id="enderboss_health" class="hidden"></td>
 
-                            <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                            <td name="boss_separation">&nbsp;&nbsp;&nbsp;&nbsp;</td>
                             <td><img src="game/img/icons/portalparts_lit.png" width="32" height="32"></td><td id="portalparts_display" class="displaytext"></td><td></td>
                         </tr>
                     </table>
@@ -104,6 +107,7 @@
                 <div id="upgrades_container">
                     <p class="title">Upgrades</p>
                     <div id="upgrades">
+                        <div id="antimatter_upgrade_box" class="hidden"></div>
                         <div id="finalpickaxe_upgrade_box" class="hidden"></div>
                         <div id="enderpickaxe_upgrade_box" class="hidden"></div>
                         <div id="hellpickaxe_upgrade_box" class="hidden"></div>
@@ -114,7 +118,7 @@
                         <div id="witch_upgrade_box" class="hidden"></div>
                         <div id="partways_upgrade_box" class="hidden"></div>
                         <div id="sword_upgrade_box" class="hidden"></div>
-                        <div id="insurance_upgrade_box" class="hidden"></div>
+                        <div id="autowage_upgrade_box" class="hidden"></div>
                         <div id="buildportal_upgrade_box" class="hidden"></div>
                         <div id="igniteportal_upgrade_box" class="hidden"></div>
                     </div>
@@ -179,6 +183,33 @@
                         <button name="attack_enderboss" style="width:275px">Attack</button>
                     </div>
                 </div>
+                
+                <div id="randomBossPortal" class="hidden">
+                    <div style="float:left;">
+                        <span name="timer" style="font-size:19px;" class="hidden">You can summon a new boss in 0 minutes.</span>
+                        <br/>
+                        <br/>
+                        <a href="#" name="bossPortal"><img src="game/img/icons/bossPortal.png"></a>
+                    </div>
+                </div>
+                
+                <div id="randomBossArea" class="hidden">
+                    <div style="float:left;">
+                        <p style="text-align:left;font-size:18px;">
+                            Time remaining: <span name="timer">0</span><br/>
+                            Waves: <span name="wave">0/0</span><br/>
+                        </p>
+                        <h2 name="bossName"></h2>
+                        <hr>
+                        <img src="game/img/npc/randomboss_npc.png" width="275" height="130"><br/>
+                        <div class="healthbar large" name="health" style="width:275px;"><span style="width:0;"></span></div>
+                        <br/>
+                        <button name="attack_randomboss" style="width:275px">Attack</button>
+                        <br/>
+                        <br/>
+                        <textarea name="battelog" rows="8" cols="33" class="enderBox"></textarea>
+                    </div>
+                </div>
 
                 <div id="vault_container">
                     <div id="vault">
@@ -206,8 +237,11 @@
                                 <tr>
                                     <td>
                                         <img src="game/img/npc/steve.png"><br/>
-                                        <b>$<span name="scientists_price">1,000,000</span></b><br/>
-                                        Research rate +1 second
+                                        <b><span name="scientists_price">$1,000,000</span></b><br/>
+                                        Research rate +<span name="scientistTime">1</span> second(s)
+                                        <br/>
+                                        <br/>
+                                        <center><font size="2"><a href="#" name="scientistBuyMode" style="color:green;">Use boss currency</a></font></center>
                                     </td>
                                     <td>
                                         You own <span name="scientists_owned">0</span> scientists.<br/>
@@ -219,7 +253,9 @@
                                 </tr>
                             </table>
                             <div class="left textleft" style="margin-left:40px;">
-                                <button name="start_research" style="color:green;">Start Research Project</button><br/>
+                                <button name="start_research" style="color:green;">Start Research Project</button>
+                                <br/>
+                                <br/>
                                 <span name="no_projects">You currently have no projects.</span>
                                 <div style="width:100%;" name="projects_holder"></div>
                             </div>
@@ -253,7 +289,7 @@
 
                     </table>
                     <table name="stats" cellpadding="8" type="tab" class="hidden textleft">
-                        <tr><td>Money earned</td><td name="totalmoney"></td></tr>
+                        <tr><td>Money earned</td><td name="totalmoney">0</td></tr>
                         <tr><td>Money from looting</td><td name="totallootmoney">0</td></tr>
                         <tr><td>Total Worker OPM</td><td name="totalworkeropm">0</td></tr>
                         <tr><td>Times Worker Efficiency<br/>has been researched</td><td name="wopmtimesresearch">0</td></tr>
@@ -291,7 +327,7 @@
             <br/>
             <img src="game/img/icons/loading.gif" width="50" height="50" />
             <br/>
-            <font size="1">Please wait while the game resources are loaded.</font>
+            <font size="1">Please wait while the game resources are loaded.<br/><br/><br/>Game not loaded after 30 seconds? <a href="deletesavedgamedata.php" style="color:green;">Delete game data</a></font>
         </div>
     </body>
     <script>

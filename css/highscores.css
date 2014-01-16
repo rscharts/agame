@@ -58,3 +58,11 @@ a {color:green;}
 .green {
     background-color:#C3E0C3;
 }
+
+tr.clickable {
+    cursor:pointer;
+}
+
+.hidden {
+    display:none;
+}

@@ -1,18 +1,16 @@
 (function(){
-
-	var _z = console;
-	Object.defineProperty(window, "console", {
-		get : function() {
-			if (_z._commandLineAPI) {
-				throw "Sorry, can't execute scripts!";
-			}
-			return _z;
-		},
-		set : function(val) {
-			_z = val;
-		}
-	});
-
+    var _z = console;
+    Object.defineProperty(window, "console", {
+            get : function() {
+                    if (_z._commandLineAPI) {
+                            throw "Sorry, can't execute scripts!";
+                    }
+                    return _z;
+            },
+            set : function(val) {
+                    _z = val;
+            }
+    });
 })();
 
 if(!(typeof(Storage)!=="undefined")) alert('Your browser does not support localstorage. Please update to a modern browser.');
@@ -159,6 +157,10 @@ var portal = 0;
 //research lab
 var ownsResearchLab = false;
 var scientists = 0;
+var scientistsBC = 0;
+var scientistCostBC = 2;
+var scientistBCMode = false;
+var scientistTime = 1;
 var projects = {};
 var finishedResearch = {};
 var researching = false;
@@ -175,6 +177,9 @@ var popupActive = false;
 var bossCurrency = 0;
 var bossLastGenerated = 0;
 var bossDifficulty = 1;
+var bossDifficultyCap = 40;
+var bossCooldown = 60000;
+var bossesDefeated = 0;
 var bossScenario = {
 	'active': false,
         'scenario_ID':0,
@@ -273,7 +278,7 @@ $(document).ready(function() {
 				}
 
 				//project time lapsed
-				projects[project] += scientists;
+				projects[project] += ((scientists+scientistsBC)*scientistTime);
 
 				var percent = Math.round((projects[project] / research_projects[project].time) * 100);
 				percent = (percent >= 100) ? 100 : percent;
@@ -480,27 +485,51 @@ $(document).ready(function() {
 				research();
 		}
 
-		$('#employment span[name="scientists_owned"]').html(scientists);
-
 		researchLab();
 	}
         
         function randomBoss(){
             if(bossScenario['active']){
                 var sID = bossScenario['scenario_ID'];
-                bossScenario['boss'][sID]['func'](bossDifficulty);
+                bossDifficulty = (bossDifficulty > bossDifficultyCap) ? bossDifficultyCap : bossDifficulty;
+                scenarios[sID]['func'](bossDifficulty);
+                return true;
             }else{
-                    //generate a boss
-                    var id = rand(1,(Object.size(scenarios)));
-                    var scenario = scenarios[id];
-                    
-                    bossScenario['active'] = true;
-                    bossScenario['boss'][id] = scenario;
-                    bossScenario['boss']['name'] = 'Random Boss';
-                    bossScenario['scenario_ID'] = id;
-                    randomBoss();
+                var d = new Date().getTime();
+                
+                if((d-bossLastGenerated) > bossCooldown){
+                        //generate a boss
+                        var id = rand(1,(Object.size(scenarios)));
+                        var scenario = scenarios[id];
+
+                        bossScenario['active'] = true;
+                        bossScenario['boss']['vars'] = JSON.parse(JSON.stringify(scenario['vars']));
+                        bossScenario['boss']['name'] = bossNames[rand(0,bossNames.length)];
+                        bossScenario['scenario_ID'] = id;
+                        randomBoss();
+                        
+                        return true;
+                }else{
+                    popup('WHOOPS!', 'You can only generate a random boss every minute.', '', 0);
+                    return false;
+                }
             }
 	}
+        
+        bossWon = function(bossVars){
+                //they beat the boss!
+                money += bossVars.rewards.money;
+                totalMoneyEarned += bossVars.rewards.money;
+                bossCurrency += bossVars.rewards.bc;
+                bossesDefeated++;
+
+                //boss difficulty goes up every 2 bosses defeated
+                if(bossesDefeated % 2 == 0 || bossesDefeated % 2 == 2 && bossDifficulty < bossDifficutlyCap){
+                    bossDifficulty++;
+                }
+                
+                updateValues()
+        }
 
 	function zombieBoss() {
 		zbInterval = setInterval(function() {
@@ -785,11 +814,11 @@ $(document).ready(function() {
                                                                 
                                                                 var message = 'Congratulations! You have unlocked random bosses. Anytime you have beat all the bosses in the game, you will have access to random bosses. ';
                                                                 message += 'These random bosses will have different scenarios, so they may not all be defeated the same way.<br/><br/>';
-                                                                message += 'Upon defeating a random boss, you will gain "boss currency". This currency may be used to research projects that require only boss currency. After deating a boss ';
+                                                                message += 'Upon defeating a random boss, you will gain "boss currency". This currency may be used to research projects that require only boss currency. After defeating a boss ';
                                                                 message += 'and getting boss currency, you will have to wait another 5 minutes before another random boss will be generated.<br/><br/>';
                                                                 message += 'Does this mean I have completed the game? No. If new bosses are added to the game, you will have to defeat those bosses to unlock the random boss feature again.';
                                                                 
-                                                                popup('RANDOM BOSSES UNLOCKED', message, '', 0);
+                                                                popup('CRETIN & MOJI SYSTEM UNLOCKED', message, '', 0);
 							}
 						}
 					};
@@ -934,7 +963,7 @@ $(document).ready(function() {
 			$('#hellpickaxe_upgrade_box').hide();
 		}
 
-		if (pickaxe_type != 'ender' && pickaxe_type != 'final' && ebHealth <= 0 && portal == 1 && !overWorld) {
+		if (pickaxe_type == 'underworld' && pickaxe_type != 'final' && ebHealth <= 0 && portal == 1 && !overWorld) {
 			var pObj = pickaxes['ender'];
 
 			color = (money >= pObj.price) ? 'green' : 'red';
@@ -953,6 +982,16 @@ $(document).ready(function() {
 		} else {
 			$('#finalpickaxe_upgrade_box').hide();
 		}
+                
+                if(pickaxe_type == 'final'){
+                    var pObj = pickaxes['antimatter'];
+                    
+                    color = (bossCurrency >= pObj.bc) ? 'green' : 'red';
+                    $('#antimatter_upgrade_box').show();
+                    $('#antimatter_upgrade_box').html('<a href="#" name="upgrade_antimatterpickaxe" border="0"><div class="upgrade '+color+'"><img src="'+ pObj.img +'" width="65" height="60" /><b>'+ pObj.name +'</b><br/>BC: '+ numberFormat(pObj.bc) +'<br/>A boss pickaxe.<div class="clear"></div></div>');
+                }else{
+                    $('#antimatter_upgrade_box').hide();
+                }
                 
                 if(!workerAutoWage){
                     color = (money >= workerAutoWageCost) ? 'green' : 'red';
@@ -1024,6 +1063,14 @@ $(document).ready(function() {
 		if (pickaxe_type == 'ender' && money >= pickaxes['final'].price) {
 			pickaxe_type = 'final';
 			money -= pickaxes['final'].price;
+                        updateValues();
+		}
+	}
+        
+        function upgradeAntimatterPickaxe() {
+		if (pickaxe_type == 'final' && bossCurrency >= pickaxes['antimatter'].bc) {
+			pickaxe_type = 'antimatter';
+			bossCurrency -= pickaxes['antimatter'].bc;
                         updateValues();
 		}
 	}
@@ -1315,7 +1362,8 @@ $(document).ready(function() {
 		for (var soldier in soldiers) {
 			var sObj = soldiers[soldier];
 			html += '<tr><td><img src="' + sObj.img + '" width="60" height="65"><br/><b>' + sObj.name + '</b><br/>$' + moneyFormat(sObj.price) + ' - KPE: ' + sObj.kpe + '</td>';
-			html += '<td><button name="buy-' + soldier + '">Buy</button><button name="sell-' + soldier + '">Sell</button><br/><button name="buyx-' + soldier + '">Buy X</button><button name="sellx-' + soldier + '">Sell X</button><br/>You own ' + numberFormat(employedSoldiers[soldier]) + '.</td>';
+			html += '<td><button name="buy-' + soldier + '">Buy</button><button name="sell-' + soldier + '">Sell</button><br/><button name="buyx-' + soldier + '">Buy X</button><button name="buymax-'+ soldier +'">Buy Max</button>';
+                        html += '<button name="sellx-' + soldier + '">Sell X</button><br/>You own ' + numberFormat(employedSoldiers[soldier]) + '.</td>';
 			html += '<td>Total KPE: ' + numberFormat(soldiers[soldier].kpe * employedSoldiers[soldier]) + '</td>';
 		}
 
@@ -1426,7 +1474,7 @@ $(document).ready(function() {
 				updateValues();
 			} else if (amount > 1) {
 				//confirm purchase
-				var html = 'Are you sure you wish to purchase ' + amount + ' ' + name + 's, worth ' + cost + '.';
+				var html = 'Are you sure you wish to purchase ' + numberFormat(amount) + ' ' + name + 's, worth $' + numberFormat(cost) + '.';
 
 				var buttons = {
 					'yes' : {
@@ -1449,7 +1497,7 @@ $(document).ready(function() {
 				popup('CONFIRM PURCHASE', html, buttons, 0);
 			}
 		} else {
-			alert('You do not have enough money.');
+			popup('WHOOPS!', 'You do not have enough money.', '', 0);
 		}
 	}
 
@@ -1468,22 +1516,30 @@ $(document).ready(function() {
 				updateValues();
 			}
 		} else {
-			alert('You do not have this many to sell.');
+			popup('WHOOPS!', 'You do not have this many to sell.', '', 0);
 		}
 	}
 
 	function buyScientist() {
+            if(!scientistBCMode){
 		var cost = 1000000 * (Math.pow(1.0005, scientists));
 
 		if (money >= cost) {
 			scientists++;
 			money -= cost;
 			updateValues();
-
-			$('#employment span[name="scientists_owned"]').html(scientists);
 		} else {
-			popup('WHOOPS!', 'You need more money to hire this worker.', '', 0);
+			popup('WHOOPS!', 'You need more money to purchase a scientist.', '', 0);
 		}
+            }else{
+                if(bossCurrency >= scientistCostBC){
+                    scientistsBC++;
+                    bossCurrency -= scientistCostBC;
+                    updateValues();
+                }else{
+                    popup('WHOOPS!', 'You need more BC to purchase a scientist.', '', 0);
+                }
+            }
 	}
 
 	function buyXScientists() {
@@ -1493,7 +1549,9 @@ $(document).ready(function() {
 			'continue' : {
 				'text' : 'Buy',
 				'func' : function() {
-					var amount = parseInt($('#popup input[name="x_amount"]').val());
+                                    var amount = parseInt($('#popup input[name="x_amount"]').val());
+                                    
+                                    if(!scientistBCMode){
 					var totalcost = 1000000 * (Math.pow(1.0005, scientists));
 
 					var i = 1;
@@ -1506,10 +1564,20 @@ $(document).ready(function() {
 						scientists += amount;
 						money -= totalcost;
                                                 updateValues();
-						$('#employment span[name="scientists_owned"]').html(scientists);
 					} else {
 						popup('WOOPS', 'You can\'t afford to purchase that many scientists!', '', 0);
 					}
+                                    }else{
+                                        var cost = amount*scientistCostBC;
+                                        
+                                        if(bossCurrency >= cost){
+                                            scientistsBC += amount;
+                                            bossCurrency -= cost;
+                                            updateValues();
+                                        }else{
+                                            popup('WOOPS', 'You can\'t afford to purchase that many scientists!', '', 0);
+                                        }
+                                    }
 				}
 			},
 			'cancel' : {
@@ -1523,57 +1591,90 @@ $(document).ready(function() {
 	}
 
 	function buyMaxScientists() {
+            if(!scientistBCMode){
+                    var totalcost = 1000000 * (Math.pow(1.0005, scientists));
 
-		var totalcost = 1000000 * (Math.pow(1.0005, scientists));
+                    var i = 1;
+                    for (i; money >= totalcost; i++) {
+                            var newAmount = 1000000 * (Math.pow(1.0005, scientists + i));
 
-		var i = 1;
-		for (i; money >= totalcost; i++) {
-			var newAmount = 1000000 * (Math.pow(1.0005, scientists + i));
+                            if (!(money >= totalcost + newAmount))
+                                    break;
 
-			if (!(money >= totalcost + newAmount))
-				break;
+                            totalcost += newAmount;
+                    }
 
-			totalcost += newAmount;
-		}
+                    if (money >= totalcost) {
+                            var buttons = {
+                                    '1' : {
+                                            'text' : 'Yes',
+                                            'func' : function() {
 
-		if (money >= totalcost) {
-			var buttons = {
-				'1' : {
-					'text' : 'Yes',
-					'func' : function() {
+                                                    if (money >= totalcost) {
+                                                            scientists += i;
+                                                            money -= totalcost;
+                                                            updateValues();
+                                                    }
+                                            }
+                                    },
+                                    '2' : {
+                                            'text' : 'No',
+                                            'func' : function() {
+                                            }
+                                    }
+                            };
 
-						if (money >= totalcost) {
-							scientists += i;
-							money -= totalcost;
+                            popup('ARE YOU SURE?', 'Are you sure you wish to buy ' + numberFormat(i) + ' scientist(s) for $' + moneyFormat(totalcost) + '?', buttons, 0);
+                    } else {
+                            popup('WHOOPS!', 'You can\'t even afford one!', '', 0);
+                    }
+            }else{
+                var amount = Math.floor(bossCurrency/scientistCostBC);
+                var cost = amount*scientistCostBC;
+                
+                if(bossCurrency >= cost && amount > 0){
+                    var buttonsBC = {
+                            '1' : {
+                                    'text' : 'Yes',
+                                    'func' : function() {
 
-							$('#employment span[name="scientists_owned"]').html(scientists);
-							updateValues();
-						}
-					}
-				},
-				'2' : {
-					'text' : 'No',
-					'func' : function() {
-					}
-				}
-			};
+                                            if (bossCurrency >= cost) {
+                                                    scientistsBC += amount;
+                                                    bossCurrency -= cost;
+                                                    updateValues();
+                                            }
+                                    }
+                            },
+                            '2' : {'text' : 'No','func' : function() {}}
+                    };
 
-			popup('ARE YOU SURE?', 'Are you sure you wish to buy ' + i + ' scientist(s) for $' + moneyFormat(totalcost) + '?', buttons, 0);
-		} else {
-			alert('You can\'t even afford one!');
-		}
+                    popup('ARE YOU SURE?', 'Are you sure you wish to buy ' + numberFormat(amount) + ' scientist(s) for ' + numberFormat(cost) + ' BC?', buttonsBC, 0);
+                }else{
+                    popup('WHOOPS!', 'You can\'t even afford one!', '', 0);
+                }
+            }
 	}
 
 	function sellScientist() {
-		var cost = 1000000 * (Math.pow(1.0005, scientists));
+            if(!scientistBCMode){
+                    var cost = 1000000 * (Math.pow(1.0005, scientists));
 
-		if (scientists > 0) {
-			scientists--;
-			money += Math.floor(cost / 4);
-			updateValues();
-
-			$('#employment span[name="scientists_owned"]').html(scientists);
-		}
+                    if (scientists > 0) {
+                            scientists--;
+                            money += Math.floor(cost / 4);
+                            updateValues();
+                    }else{
+                        popup('WHOOPS!', 'You can\'t sell something that you don\'t have. If you have scientists, but cannot sell them for money, this may be due to the fact you purchased them with Boss Currency. (BC)', '', 0);
+                    }
+            }else{
+                if (scientistsBC > 0){
+                    scientistsBC--;
+                    bossCurrency += 1;
+                    updatesValues();
+                }else{
+                    popup('WHOOPS!', 'You can\'t sell something that you don\'t have. If you have scientists, but cannot sell them for Boss Currency, this may be due to the fact you purchased them with money.', '', 0);
+                }
+            }
 	}
 
 	/* VAULT FUNCTIONS */
@@ -1739,51 +1840,65 @@ $(document).ready(function() {
 				$('body').css('color', '#2a6e74');
 				$('a').css('color', '#2a6e74');
 				$('h2').css('color', '#2a6e74');
-				$('#container').effect("shake", {
-					times : 15
-				});
+                                
+                                if(ebHealth > 0){
+                                        $('#container').effect("shake", {
+                                                times : 15
+                                        });
+                                    
+                                        if (!areAllOrbsDestroyed()) {
+                                            $('#mining_container').hide();
+                                            $('#orbs').show(500);
 
-				if (!areAllOrbsDestroyed()) {
-					$('#mining_container').hide();
-					$('#orbs').show(500);
+                                            if (!ebHint) {
+                                                    var buttons = {
+                                                            '1' : {
+                                                                    'text' : 'Continue',
+                                                                    'func' : function() {
+                                                                            ebHint = true;
 
-					if (!ebHint) {
-						var buttons = {
-							'1' : {
-								'text' : 'Continue',
-								'func' : function() {
-									ebHint = true;
+                                                                            var chars = ['!', '$', '#', '@'];
+                                                                            var interval = setInterval(function() {
+                                                                                    $('#popup p[name="title"]').text(chars[rand(0, Object.size(chars) - 1)] + chars[rand(0, Object.size(chars) - 1)] + chars[rand(0, Object.size(chars) - 1)]);
+                                                                            }, 25);
 
-									var chars = ['!', '$', '#', '@'];
-									var interval = setInterval(function() {
-										$('#popup p[name="title"]').text(chars[rand(0, Object.size(chars) - 1)] + chars[rand(0, Object.size(chars) - 1)] + chars[rand(0, Object.size(chars) - 1)]);
-									}, 25);
+                                                                            var buttons = {
+                                                                                    '1' : {
+                                                                                            'text' : 'Continue',
+                                                                                            'func' : function() {
+                                                                                                    clearInterval(interval);
+                                                                                            }
+                                                                                    }
+                                                                            };
 
-									var buttons = {
-										'1' : {
-											'text' : 'Continue',
-											'func' : function() {
-												clearInterval(interval);
-											}
-										}
-									};
+                                                                            var message = '<img src="game/img/npc/enderman_face.png" style="margin-right:6px;" width="40" height="40" class="left"> You were warned. You\'ve left me no choice but to unleash my soldiers to ensure your destruction. Why get my hands dirty?';
+                                                                            popup('', message, buttons, 0);
+                                                                    }
+                                                            }
+                                                    };
 
-									var message = '<img src="game/img/npc/enderman_face.png" style="margin-right:6px;" width="40" height="40" class="left"> You were warned. You\'ve left me no choice but to unleash my soldiers to ensure your destruction. Why get my hands dirty?';
-									popup('', message, buttons, 0);
-								}
-							}
-						};
-
-						var message = 'Your scientists report that the only way we will be able to fight this thing is if we manage to destroy the three orbs. The orbs, if completely destroyed, will allow your army to see and fight the monster. We also believe that they will regenerate health overtime, so be quick. Good luck.';
-						if (befriendedGolem)
-							popup('HINT', '<img src="game/img/npc/golem_face.png" style="margin-right:6px;" width="40" height="40" class="left">' + message, buttons, 0);
-						else
-							popup('HINT', '<img src="game/img/npc/witch_face.png" style="margin-right:6px;" width="40" height="40" class="left">' + message, buttons, 0);
-					}
-				} else if (ebHealth > 0) {
-					$('#mining_container').hide();
-					$('#enderbossFight').show(800);
-				}
+                                                    var message = 'Your scientists report that the only way we will be able to fight this thing is if we manage to destroy the three orbs. The orbs, if completely destroyed, will allow your army to see and fight the monster. We also believe that they will regenerate health overtime, so be quick. Good luck.';
+                                                    if (befriendedGolem)
+                                                            popup('HINT', '<img src="game/img/npc/golem_face.png" style="margin-right:6px;" width="40" height="40" class="left">' + message, buttons, 0);
+                                                    else
+                                                            popup('HINT', '<img src="game/img/npc/witch_face.png" style="margin-right:6px;" width="40" height="40" class="left">' + message, buttons, 0);
+                                            }
+                                    } else if (ebHealth > 0) {
+                                            $('#mining_container').hide();
+                                            $('#enderbossFight').show(800);
+                                    }
+                                }else{
+                                    //boss area
+                                    $('#mining_container').hide();
+                                    if(!bossScenario['active']){
+                                        $('#randomBossPortal').show();
+                                    }else{
+                                        if(bossScenario['scenario_ID'] == 2)
+                                            $('#randomBossArea').show();
+                                        else
+                                            $('#mining_container').show();
+                                    }
+                                }
 			}
 		} else {
 			overWorld = true;
@@ -1793,14 +1908,18 @@ $(document).ready(function() {
 			$('a').css('color', 'black');
 			$('h2').css('color', 'black');
 			$('#bosses').css('background-color', 'white');
-			$('#container').effect("shake", {
-				times : 15
-			});
+
+                        if(ebHealth > 0)
+                            $('#container').effect("shake", {times : 15});
 
 			$('#mining_container').fadeIn(2000);
+                        $('#randomBossPortal').hide();
+                        $('#randomBossArea').hide();
 			$('#shrine').hide();
 			$('#orbs').hide();
 		}
+                
+                showUpgrades();
 	}
 
 	/* GAME LOADING/SAVING FUNCTIONS */
@@ -1832,14 +1951,10 @@ $(document).ready(function() {
 			lastCookie = save;
 
 			//update message
-			/*if (update < 2) {
-				if (confirm("There's been an update! Would you like to see the changes?"))
-					window.open('http://www.rscharts.com/game/changelog.txt?v=2');
-
-				if(confirm("For a better experience, it's best if you reset your progress. Press O.K. to reset your progress, or cancel to continue on with your current game.")){
-                                    location.reload();
-                                }
-			}*/
+			if (update < 10) {
+                            if (confirm("There's been an update! Would you like to see the changes?"))
+                                window.open('http://www.rscharts.com/game/changelog.txt?v=10');
+			}
 
 			//set our portal image to the appropriate image
 			if (portalBuilt)
@@ -1867,12 +1982,7 @@ $(document).ready(function() {
 				} else if (ebHealth > 0) {
 					$('#enderbossFight div[name="health"] span').css('width', 100 - Math.round((ebHealth / 5000000) * 100) + '%');
 				}
-			}else{
-                            //ok so the last bost currently in the game has been defeated
-                            //lets start generating random bosses
-
-                            //randomBoss();
-                        }
+			}
 
 			//get last save time
 			var lastSaveCookie = getCookie('last_save');
@@ -1908,9 +2018,9 @@ $(document).ready(function() {
 				underlord();
 			} else if (ebUnlocked && ebHealth > 0) {
 				enderboss();
-			} else if (zbResurrected && dcResurrected) {
-				zomolio();
-			}
+			} else if (bossScenario['active']){
+                            randomBoss();
+                        }
 
 			displayFriends();
 		} else {
@@ -1931,7 +2041,7 @@ $(document).ready(function() {
 				achievements['started'] = true;
 				popup('ACHIEVEMENT UNLOCKED!', '<table><tr><td><img src="game/img/icons/icon_1.png"></td><td style="font-size:20px;">SO THE JOURNEY BEGINS...</td></tr></table>', false, 4000);
 			}
-		}
+                    }
 
 		//no unqiueID? give the player one
 		//this is for submitting to highscores
@@ -1948,13 +2058,13 @@ $(document).ready(function() {
 		var d = new Date().getTime();
 
 		if (lastSave > 0)
-			$('#save span[name="time"]').text(timeToString(d - lastSave));
+			$('#save span[name="time"]').text(timeToString(d - lastSave, 'ago'));
 		else
 			$('#save span[name="time"]').text('never');
 
 		//load pictures, prevent flashing
 		var loaded_pictures = 0;
-		var pictures = ['game/img/items/pickaxeWood.png', 'game/img/items/pickaxeStone.png', 'game/img/items/pickaxeIron.png', 'game/img/items/pickaxeGold.png', 'game/img/items/pickaxeDiamond.png', 'game/img/items/pickaxeHeavenly.png', 'game/img/items/pickaxeHell.png', 'game/img/items/pickaxeEnder.png', 'game/img/blocks/endore.png', 'game/img/blocks/netherquartz.png', 'game/img/blocks/glowstone.png', 'game/img/blocks/diamond.png', 'game/img/blocks/gold.png', 'game/img/blocks/iron.png', 'game/img/blocks/mossycobble.png', 'game/img/blocks/coal.png', 'game/img/blocks/stone.png', 'game/img/npc/steve.png', 'game/img/npc/miner.png', 'game/img/npc/morris.png', 'game/img/npc/heavenlyminer.png', 'game/img/npc/hellMiner.png', 'game/img/npc/soldier1.png', 'game/img/npc/soldier2.png', 'game/img/npc/soldier3.png', 'game/img/npc/witch.png', 'game/img/npc/golemfull.png', 'game/img/icons/vault.png', 'game/img/icons/compass.png', 'game/img/npc/golem.png', 'game/img/npc/chicken.png', 'game/img/items/swordWooden.png', 'game/img/icons/portal_lit.png', 'game/img/icons/flintnsteel.png', 'game/img/icons/insurance.png', 'game/img/icons/portal_unlit.png', 'game/img/icons/portal_lit.png', 'game/img/icons/attack1.png', 'game/img/icons/attack2.png', 'game/img/icons/storage1.png', 'game/img/icons/storage2.png', 'game/img/icons/workeropm1.png', 'game/img/icons/efficiency1.png', 'game/img/icons/efficiency2.png', 'game/img/icons/refinery1.png', 'game/img/icons/refinery2.png'];
+		var pictures = ['game/img/items/pickaxeWood.png', 'game/img/items/pickaxeStone.png', 'game/img/items/pickaxeIron.png', 'game/img/items/pickaxeGold.png', 'game/img/items/pickaxeDiamond.png', 'game/img/items/pickaxeHeavenly.png', 'game/img/items/pickaxeHell.png', 'game/img/items/pickaxeEnder.png', 'game/img/blocks/endore.png', 'game/img/blocks/netherquartz.png', 'game/img/blocks/glowstone.png', 'game/img/blocks/diamond.png', 'game/img/blocks/gold.png', 'game/img/blocks/iron.png', 'game/img/blocks/mossycobble.png', 'game/img/blocks/coal.png', 'game/img/blocks/stone.png', 'game/img/npc/steve.png', 'game/img/npc/miner.png', 'game/img/npc/morris.png', 'game/img/npc/heavenlyminer.png', 'game/img/npc/hellMiner.png', 'game/img/npc/soldier1.png', 'game/img/npc/soldier2.png', 'game/img/npc/soldier3.png', 'game/img/npc/witch.png', 'game/img/npc/golemfull.png', 'game/img/icons/vault.png', 'game/img/icons/compass.png', 'game/img/npc/golem.png', 'game/img/npc/chicken.png', 'game/img/items/swordWooden.png', 'game/img/icons/portal_lit.png', 'game/img/icons/flintnsteel.png', 'game/img/icons/insurance.png', 'game/img/icons/portal_unlit.png', 'game/img/icons/portal_lit.png', 'game/img/icons/attack1.png', 'game/img/icons/attack2.png', 'game/img/icons/storage1.png', 'game/img/icons/storage2.png', 'game/img/icons/workeropm1.png', 'game/img/icons/efficiency1.png', 'game/img/icons/efficiency2.png', 'game/img/icons/refinery1.png', 'game/img/icons/refinery2.png', 'game/img/icons/insurance.png', 'game/img/items/pickaxeAntimatter.png', 'game/img/icons/bossCurrency.png', 'game/img/icons/madscientist.png', 'game/img/icons/bosscapupgrade.png'];
 
 		for (var i = 0; i < Object.size(pictures); i++) {
 			$('<img src="' + pictures[i] + '" name="load-' + pictures[i] + '" style="display:none;">').appendTo('body').load(function() {
@@ -2036,6 +2146,8 @@ $(document).ready(function() {
                 saveString['totalWorkerOPM'] = getWorkerTotalOPM();
                 saveString['ownsResearchLab'] = ((ownsResearchLab) ? true : false);
                 saveString['scientists'] = scientists;
+                saveString['scientistsBC'] = scientistsBC;
+                saveString['scientistBCMode'] = scientistBCMode;
                 saveString['projects'] = projects;
                 saveString['finishedResearch'] = finishedResearch;
                 saveString['ebIntro'] = ((ebIntro) ? true : false);
@@ -2052,7 +2164,12 @@ $(document).ready(function() {
                 saveString['workersLastPaid'] = workersLastPaid;
                 saveString['workerHappiness'] = workerHappiness;
                 saveString['workerAutoWage'] = ((workerAutoWage) ? true : false);
-                saveString['update'] = 5;
+                saveString['bossDifficulty'] = bossDifficulty;
+                saveString['bossCurrency'] = bossCurrency;
+                saveString['bossesDefeated'] = bossesDefeated;
+                saveString['bossLastGenerated'] = bossLastGenerated;
+                saveString['bossScenario'] = bossScenario;
+                saveString['update'] = 11;
                 
                 saveString = JSON.stringify(saveString);
                 saveString = Base64.encode(unescape(encodeURIComponent(saveString)));
@@ -2092,7 +2209,7 @@ $(document).ready(function() {
 							alert('Failed to complete hard save.');
 							break;
 						case 'toosoon':
-							alert('You can only submit a hardsave once every 30 minutes.');
+							alert('You can only submit a hardsave once every 5 minutes.');
 							break;
 						case 'login':
 							alert('You need to be logged in to use the hard save feature.');
@@ -2109,7 +2226,7 @@ $(document).ready(function() {
 		var again = true;
 		setTimeout(function() {
 			$.ajax({
-				url : 'version.php',
+				url : 'version.php?ver='+update,
 				success : function(v) {
 					if ( typeof v != 'undefined') {
 						if (update < parseInt(v)) {
@@ -2233,6 +2350,7 @@ $(document).ready(function() {
 	}
 
 	function updateValues() {
+		var d = new Date().getTime();
 		zbChance = (befriendedGolem || befriendedWitch) ? 0 : (money / 10) * zbChanceModifier;
 
 		$('#pickaxe').attr('src', pickaxes[pickaxe_type].img);
@@ -2242,6 +2360,7 @@ $(document).ready(function() {
 		$('#pickaxe_var_speed').text((pickaxes[pickaxe_type].speed / 1000) + ' second(s)');
 		$('#pickaxe_var_dropchance').text(pickaxes[pickaxe_type].dropchance + '%');
 		$('#money_display').text('$' + moneyFormat(money));
+                $('#bc_display').text(numberFormat(bossCurrency));
 		$('#vault_display').text(amountOfOreInVault() + '/' + vault_max_storage);
 		$('#portalparts_display').text(portalParts + '/10');
 		if (!dcUnlocked)
@@ -2252,12 +2371,6 @@ $(document).ready(function() {
 			$('#underlord_display').text(numberFormat(ulSoldiers));
 		if (ebUnlocked)
 			$('#enderboss_display').text(numberFormat(ebSoldiers));
-
-		var previous_cash = $('#employment table[name="stats"] td[name="totalmoney"]').text();
-		previous_cash = previous_cash.replace('$', '');
-		previous_cash = previous_cash.replace(',', '');
-
-		statMoneyPerTick = totalMoneyEarned - previous_cash;
 
 		//update stats table
 		$('#employment table[name="stats"] td[name="totalmoney"]').text('$' + moneyFormat(totalMoneyEarned));
@@ -2271,8 +2384,25 @@ $(document).ready(function() {
 		$('#employment table[name="stats"] td[name="totalbattleswon"]').text(numberFormat(statBattlesWon));
 		$('#employment table[name="stats"] td[name="totalbattleslost"]').text(numberFormat(statBattlesLost));
 
-		//update scientists price here
-		$('#employment span[name="scientists_price"]').text(moneyFormat(1000000 * (Math.pow(1.0005, scientists))));
+		//update scientists variables here
+		if(scientistBCMode){
+                    $('#employment span[name="scientists_price"]').text(scientistCostBC +' BC');
+                    $('#employment a[name="scientistBuyMode"]').text('Change currency type to money');
+                }else{
+                    $('#employment span[name="scientists_price"]').text('$'+moneyFormat(1000000 * (Math.pow(1.0005, scientists))));
+                    $('#employment a[name="scientistBuyMode"]').text('Change currency type to BC');
+                }
+                
+                $('#employment span[name="scientistTime"]').text(scientistTime);
+                $('#employment span[name="scientists_owned"]').html(scientists+scientistsBC);
+                
+                //update boss portal timer
+                if((d-bossLastGenerated) >= bossCooldown){
+                    $('#randomBossPortal span[name="timer"]').hide();
+                }else{
+                    $('#randomBossPortal span[name="timer"]').show();
+                    $('#randomBossPortal span[name="timer"]').text('You can summon a new boss in '+timeToString(bossCooldown - (d-bossLastGenerated), ''));
+                }
 
 		//achievements
 		if (!achievements['millionaire'] && totalMoneyEarned > 1000000) {
@@ -2292,7 +2422,6 @@ $(document).ready(function() {
 
 		//update attack tab
 		var attHtml = '';
-		var d = new Date().getTime();
 		if (ulIntro) {
 			if (ulSoldiers > 0)
 				attHtml += '<button name="launchattack-underlord">Launch attack against the Underlord\'s soldiers.</button>';
@@ -2321,7 +2450,7 @@ $(document).ready(function() {
 		if (lastSave == 0)
 			$('#save span[name="time"]').text('never');
 		else
-			$('#save span[name="time"]').text(timeToString(d - lastSave));
+			$('#save span[name="time"]').text(timeToString(d - lastSave, 'ago'));
 
 		showUpgrades();
 		showWorkers();
@@ -2506,9 +2635,147 @@ $(document).ready(function() {
 	}
         
         //simulate 'dat battle, nnngh!
-	function randBossBattle(bossVars) {
-	    alert(bossVars['soldiers']);
-	}
+	randBossBattle = function (bossVars) {
+            
+            var enemies = bossVars.rbSoldiers;
+            
+            var enemiesKilledTotal = 0;
+            var defendersKilledTotal = 0;
+            var totalDefenders = 0;
+            
+            if(typeof bossVars.excludeSoldiers[0] != 'undefined')
+                var excluded = bossVars.excludeSoldiers[0];
+            
+            for(var soldier in employedSoldiers){
+                if(typeof excluded == 'undefined' || (typeof excluded != 'undefined' && excluded != soldier)){
+                    var soldierCount = employedSoldiers[soldier];
+                    var kpe = soldiers[soldier].kpe;
+
+                    totalDefenders += soldierCount;
+
+                    var enemiesKilled = (kpe*soldierCount);
+                    enemiesKilled = ((enemiesKilled + enemiesKilledTotal)) > enemiesKilledTotal ? enemies : enemiesKilled;
+                    enemies = ((enemies-enemiesKilled) < 0) ? 0 : (enemies-enemiesKilled);
+
+
+                    var soldiersKilled = (soldierCount - Math.round(((soldierCount * kpe) - enemiesKilled) / kpe));
+                    soldiersKilled = (soldiersKilled < 0) ? 0 : soldiersKilled;
+                    employedSoldiers[soldier] -= soldiersKilled;
+                    
+                    if(employedSoldiers[soldier] < 0)
+                        employedSoldiers[soldier] = 0;
+
+                    defendersKilledTotal += soldiersKilled;
+
+                    if(enemies == 0)
+                        break;
+                }
+            }
+        
+            var won = false;
+            
+            if(enemies < getArmyStrength()){
+                won = true;
+                bossVars.wins++;
+                statBattlesWon++;
+            }else{
+                statBattlesLost++;
+            }
+            
+            //update stats
+            statEnemiesKilled += enemiesKilledTotal;
+            statDefendersKilled += defendersKilledTotal;
+            
+            var moneyStolen = (!won && money > 0) ? Math.round(money * .05) : 0;
+		money -= moneyStolen;
+            
+            var message = '<img src="game/img/icons/warning.png" style="margin-right:6px;" width="40" height="40" class="left"> You ' + ((!won) ? 'lost' : 'won') + ' the battle with ' + bossScenario['boss']['name'] + '! You killed ' + numberFormat(enemiesKilled) + ' enemies, and lost ' + numberFormat(defendersKilledTotal) + ' soldiers. ';
+                message += bossScenario['boss']['name'] + '\'s remaining army of ' + enemies + ' soldiers ' + ((!won) ? 'beat' : 'lost to') + ' yours of ' + numberFormat(totalDefenders - defendersKilledTotal) + '. $' + moneyFormat(moneyStolen) + ' was stolen from you. ';
+	
+            popup('Battle Report', message, '', 0);
+            
+            bossVars.wavesCompleted++;
+            
+            if(bossVars.wavesCompleted >= bossVars.waves){
+                if(bossVars.wins >= bossVars.waves){
+                    bossWon(bossVars);
+                    
+                    var html = 'You have successfully beat this random boss.<hr><table>';
+                    html += '<tr><td><b>Difficulty:</b></td><td>'+ bossDifficulty +'</td></tr>';
+                    html += '<tr><td><b>Total waves:</b></td><td>'+ bossVars.waves +'</td></tr>';
+                    html += '<tr><td><b>Successful waves:</b></td><td>'+ bossVars.wins +'</td></tr>';
+                    html += '<tr><td><hr>REWARDS<br/><br/></td></tr>';
+                    html += '<tr><td><b>Money earned:</b></td><td>$'+ numberFormat(bossVars.rewards.money) +'</td></tr>';
+                    html += '<tr><td><b>Boss currency earned:</b></td><td>'+ numberFormat(bossVars.rewards.bc) +'</td></tr>';
+                    
+                    popup('ACTIVITY PASSED!', html, '', 0);
+                    bossLastGenerated = new Date().getTime();
+                }else{
+                    //they did not beat the boss!
+                    popup('ACTIVITY FAILED!', 'You failed to complete the random boss activity. You receive no rewards.', '', 0);
+                }
+                
+                //boss is done
+                clearInterval(bossVars.interval);
+                bossScenario['active'] = false;
+                
+                if(!overWorld){
+                    $('#mining_container').hide();
+                    $('#randomBossPortal').show(1250);
+                }
+            }else{
+                bossVars.rbSoldiers = bossVars.soldiersRestore;
+            }
+        }
+        
+        attackRandBoss = function(){
+            //jquery passes its own argument to the function, so we'll have
+            //to get the bossVars like this
+            var bossVars = bossScenario['boss']['vars'];
+            var battlelog = $('#randomBossArea textarea[name="battelog"]');
+            var d = new Date().getTime();
+            
+            if((d-bossVars.lastAttack) > 10000){
+                bossVars.lastAttack = d;
+                battlelog.text('');
+                
+                if(bossScenario['active']){
+                    var totalDamage = 0;
+                    for(var soldier in employedSoldiers){
+                        var soldierCount = employedSoldiers[soldier];
+                        var damage = soldierCount*soldiers[soldier].kpe;
+
+                        damage = (bossVars.health-damage < 0) ? bossVars.health : damage;
+                        bossVars.health -= damage;
+                        totalDamage += damage;
+                        
+                        var soldiersKilled = Math.round(damage/soldiers[soldier].kpe);
+                        soldiersKilled = (soldiersKilled > soldierCount) ? soldierCount : soldiersKilled;
+                        employedSoldiers[soldier] -= soldiersKilled;
+                        
+                        
+                        battlelog.text('\n~~~~~~~~~~~\n'+soldiers[soldier].name +'(s) lost: '+ soldiersKilled+'\n~~~~~~~~~~~\n'+battlelog.text());
+                        
+                        if(bossVars.health <= 0){
+                            bossVars.wavesCompleted++;
+                            
+                            if(bossVars.wavesCompleted < bossVars.waves){
+                                bossVars.health = bossVars.startHealth;
+                                popup('WAVE #'+ bossVars.wavesCompleted +' COMPLETE!', 'You have successfully completed the wave. '+ (bossVars.waves-bossVars.wavesCompleted) +' waves remaining.', '', 0);
+                            }
+                            
+                            break;
+                        }
+                    }
+                    
+                    battlelog.text('Damage dealt: '+ totalDamage +'\n'+battlelog.text());
+                
+                    $('#randomBossArea div[name="health"] span').css('width', 100 - Math.round((bossVars.health / bossVars.startHealth) * 100) + '%');
+                }
+            }else{
+                popup('WHOOPS!', 'You can only attack the random boss every 10 seconds.', '', 0);
+            }
+        }
 
 	function getWorkerTotalOPM() {
 		var opm = 0;
@@ -2570,20 +2837,20 @@ $(document).ready(function() {
 		$('#enderboss_icon').hide();
 		$('#enderboss_display').hide();
 
-		if (ebUnlocked) {
+                if(ebHealth <= 0){
+                    $('#bc_icon').show();
+                    $('#bc_display').show();
+                    $('#quickdetails td[name="boss_separation"]').hide();
+                }else if (ebUnlocked && ebHealth > 0) {
 			$('#enderboss_icon').show();
 			$('#enderboss_display').show();
-		} else if (ulUnlocked) {
+		} else if (ulUnlocked && shrineHealth > 0) {
 			$('#underlord_icon').show();
 			$('#underlord_display').show();
-		} else if (dcUnlocked) {
-
-			//only show chikolio if he's still here
-			if (!dcRanAway) {
-				$('#chikolio_icon').show();
-				$('#chikolio_display').show();
-			}
-		} else {
+		} else if (dcUnlocked && !dcRanAway) {
+                        $('#chikolio_icon').show();
+                        $('#chikolio_display').show();
+		} else if(!befriendedGolem && !befriendedWitch) {
 			$('#zombie_icon').show();
 			$('#zombie_display').show();
 		}
@@ -2591,7 +2858,7 @@ $(document).ready(function() {
 
 	//buttons can be an object or string
 	//if string (any string), will use default button
-	function popup(title, message, buttons, time) {
+	popup = function(title, message, buttons, time) {
 		if (!popupActive) {
 			popupActive = true;
 
@@ -2714,7 +2981,7 @@ $(document).ready(function() {
 		}, 25);
 	}
 
-	function rand(min, max) {
+	rand = function (min, max) {
 		return Math.floor((Math.random() * max) + min);
 	}
 
@@ -2724,7 +2991,7 @@ $(document).ready(function() {
 	}
 
 	//credits: http://stackoverflow.com/a/2901298/1748664
-	function numberFormat(x) {
+	numberFormat = function(x) {
 		return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 	}
 
@@ -2760,7 +3027,7 @@ $(document).ready(function() {
 		}
 	}
 
-	function timeToString(time) {
+	timeToString = function (time,append) {
 		time = (time / 1000);
 		var timestr = '';
 
@@ -2772,12 +3039,12 @@ $(document).ready(function() {
 			timestr = Math.round(time) + ' second(s)';
 		}
 
-		return timestr + ' ago';
+		return timestr + ' '+ append;
 	}
 
-	function randomObjectElement() {
+	randomObjectElement = function(obj) {
 		var keys = Object.keys(obj)
-		return obj[keys[keys.length * Math.random() << 0]];
+		return keys[keys.length * Math.random() << 0];
 	}
 
 	//credits to: http://stackoverflow.com/questions/210717/using-jquery-to-center-a-div-on-the-screen
@@ -2891,6 +3158,33 @@ $(document).ready(function() {
 	$(document).on('click', 'a[name="upgrade_igniteportal"]', ignitePortal);
         $(document).on('click', 'a[name="upgrade_autowage"]', upgradeAutoWage);
 	$(document).on('click', 'a[name="portal"]', enterPortal);
+        $(document).on('click', 'a[name="bossPortal"]', function(){
+            var buttons = {
+                '1' : {
+                    'text' : 'Summon Boss',
+                    'func' : function(){
+                        if(!bossScenario['active']){
+                            if(randomBoss()){
+                                $('#randomBossPortal').hide();
+                                
+                                if(bossScenario['boss']['vars'].interactive)
+                                    $('#mining_container').hide();
+                                else
+                                    $('#mining_container').show();
+                            }
+                        }else{
+                            popup('WHOOPS!', 'You are already fighting a boss.', '', 0);
+                        }
+                    }
+                },
+                '2' : {
+                    'text' : 'Cancel',
+                    'func' : function(){}
+                }
+            }
+            
+            popup('SUMMON BOSS', 'Are you sure you wish to summon a boss?', buttons, 0);
+        });
 
 	//friends
 	$(document).on('click', '#friends button[name="witch_offer"]', witchOffer);
@@ -2909,31 +3203,36 @@ $(document).ready(function() {
 		sellSoldier($(this).attr('name').split('-')[1], false)
 	});
 	$(document).on('click', 'table[name="soldiers"] button[name|="buyx"]', function() {
-		var html = '# of soldiers you wish to purchase<br/><input type="text" name="x_amount" length="30">';
-		var soldierType = $(this).attr('name').split('-')[1];
+            var html = '# of soldiers you wish to purchase<br/><input type="text" name="x_amount" length="30">';
+            var soldierType = $(this).attr('name').split('-')[1];
 
-		var buttons = {
-			'continue' : {
-				'text' : 'Buy',
-				'func' : function() {
-					buySoldier(soldierType, parseInt($('#popup input[name="x_amount"]').val()));
-				}
-			},
-			'cancel' : {
-				'text' : 'Cancel',
-				'func' : function() {
-				}
-			}
-		};
+            var buttons = {
+                    'continue' : {
+                            'text' : 'Buy',
+                            'func' : function() {
+                                    buySoldier(soldierType, parseInt($('#popup input[name="x_amount"]').val()));
+                            }
+                    },
+                    'cancel' : {
+                            'text' : 'Cancel',
+                            'func' : function() {
+                            }
+                    }
+            };
 
-		popup('HOW MUCH, EXACTLY?', html, buttons, 0);
+            popup('HOW MUCH, EXACTLY?', html, buttons, 0);
+	});
+        $(document).on('click', 'table[name="soldiers"] button[name|="buymax"]', function() {
+            var soldierType = $(this).attr('name').split('-')[1];
+            var amount = Math.floor(money/soldiers[soldierType].price);
+            buySoldier(soldierType, amount);
 	});
 	$(document).on('click', 'table[name="soldiers"] button[name|="sellx"]', function() {
 		sellSoldier($(this), true)
 	});
 
 	$(document).on('click', '#employment button[name="toggleworkers"]', function() {
-		workerToggle = (workerToggle) ? false : true;
+		workerToggle = !workerToggle;
 	});
 
 	//launching attacks
@@ -2941,11 +3240,13 @@ $(document).ready(function() {
 	$(document).on('click', '#employment div[name="attack"] button[name="attackshrine"]', attackShrine);
 	$(document).on('click', '#orbs button[name|="attackorb"]', attackOrb);
 	$(document).on('click', '#enderbossFight button[name="attack_enderboss"]', attackEnderBoss);
+        $(document).on('click', '#randomBossArea button[name="attack_randomboss"]', attackRandBoss);
 
 	//special pickaxes
 	$(document).on('click', 'a[name="upgrade_hellpickaxe"]', upgradeHellPickaxe);
 	$(document).on('click', 'a[name="upgrade_enderpickaxe"]', upgradeEnderPickaxe);
 	$(document).on('click', 'a[name="upgrade_finalpickaxe"]', upgradeFinalPickaxe);
+        $(document).on('click', 'a[name="upgrade_antimatterpickaxe"]', upgradeAntimatterPickaxe);
 
 	//research!
 	$(document).on('click', '#employment div[name="research_options"] a[name|="research"]', startResearch);
@@ -2954,6 +3255,10 @@ $(document).ready(function() {
 	$(document).on('click', '#employment button[name="hiremax_scientists"]', buyMaxScientists);
 	$(document).on('click', '#employment button[name="hirex_scientists"]', buyXScientists);
 	$(document).on('click', '#employment button[name="fire_scientist"]', sellScientist);
+        $(document).on('click', '#employment a[name="scientistBuyMode"]', function(e){
+            e.preventDefault();
+            scientistBCMode = !scientistBCMode;
+        });
 	$(document).on('click', '#employment div[name="research"] button[name="construct_lab"]', function() {
 		if (money >= 100000000) {
 			money -= 100000000;
@@ -3024,14 +3329,14 @@ $(document).ready(function() {
 	//faq
 	$('#faq').click(function() {
 		var html = '<p><b>Why is this game called "a game?"</b><br/>I haven\'t named it yet.</p>';
+                html += '<p><b>My workers aren\'t doing anything?</b><br/>Workers automatically sell there ore. If you are sure they aren\'t doing anything, make sure they are turned on.</p>';
+                html += '<p><b>What browsers are supported?</b><br/>Works with latest versions of: <br/><ul><li>Google Chrome (best option)</li><li>IE8+</li><li>Firefox</li><li>Other browsers are untested</li></ul></p>';
 		html += '<p><b>Is it normal for the screen to shake?</b><br/>Yes, after you reach the Underlord, screen shaking is suppose to resemble an earthquake.</p>';
 		html += '<p><b>Can soldiers other than templars go into the end?</b><br/>Yes. Templars are only required in the underworld.</p>';
 		html += '<p><b>What are worker wages?</b><br/>Every 20 minutes your workers will want to be paid. If you pay them, their happiness either increases/stays the same. If they are not paid, they get angry causing their productivity to go down; they may even quit!</p>';
-		html += '<p><b>When will new content be added?</b><br/>As soon as possible!</p>';
-		html += '<p><b>How do I get portal parts?</b><br/>Through Don Chikolio. No more hints. ;)</p>';
+		html += '<p><b>Do I always get one BC (boss currency)?</b><br/>No. The boss currency you get is determined by the boss difficulty level. Boss difficulty levels go up by one every two bosses defeated; the max boss difficulty level is currently 20.</p>';
 		html += '<p><b>Will there be new bosses?</b><br/>Yep!</p>';
-		html += '<p><b>Can I research more than one thing a time?</b><br/>No; however, you can create a queue of at least 3 research projects. This way all three will automatically be resarched, but only one is researched at a time.</p>';
-		html += '<p><b>What is a hard save?</b><br/>This is a save that saves to your account, and not just your browser. This will allow you to play on different computers and browsers.</p>';
+                html += '<p><b>What is a hard save?</b><br/>This is a save that saves to your account, and not just your browser. This will allow you to play on different computers and browsers.</p>';
 
 		popup('F.A.Q.', html, '', 0);
 	});
